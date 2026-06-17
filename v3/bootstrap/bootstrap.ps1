@@ -105,10 +105,15 @@ Write-Host ""
 
 # ─── Step 3: Federated identity credential ────────────────────────────────────
 Write-Host "[3] Ensuring federated identity credential '$ficName' exists on app..."
-$fic = az ad app federated-credential list `
+# NOTE: az on Windows is az.cmd, which re-parses args through cmd.exe — a JMESPath
+# query containing a '|' pipe (e.g. "[?name=='x']|[0]") makes cmd.exe treat '|' as a
+# shell pipe and fail with "'[0]' is not recognized". Filter without the pipe and take
+# the first element in PowerShell instead. (Surfaced during the 2026-06-17 bootstrap run.)
+$ficMatches = az ad app federated-credential list `
     --id $appObjectId `
-    --query "[?name=='$ficName']|[0]" `
+    --query "[?name=='$ficName']" `
     --output json | ConvertFrom-Json
+$fic = if ($ficMatches) { @($ficMatches)[0] } else { $null }
 
 if ($fic) {
     Write-Host "    SKIP: FIC '$ficName' already exists."
