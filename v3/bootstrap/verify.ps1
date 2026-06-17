@@ -107,7 +107,10 @@ Write-Host ""
 Write-Host "── ACCESS-01a: No client secret on app ─────────────────────────────"
 $credJson = az ad app credential list --id $AppObjectId -o json 2>&1
 try {
-    $creds = $credJson | ConvertFrom-Json
+    # Wrap in @() so an empty array ('[]') yields Count 0 instead of $null — under
+    # Set-StrictMode -Latest, reading .Count on a bare $null throws (false FAIL on the
+    # no-secret success case). @() also normalizes a single-object result to an array.
+    $creds = @($credJson | ConvertFrom-Json)
     if ($creds.Count -eq 0) {
         Assert-Pass 'ACCESS-01a' "az ad app credential list returned [] — no secret present"
     } else {
@@ -203,10 +206,15 @@ Write-Host "── SEC-GREP: No secret material in v3/ ────────�
 # Determine the v3 directory relative to this script's location
 $v3Dir = Join-Path $PSScriptRoot '..'
 $v3Dir = (Resolve-Path $v3Dir).Path
+# Exclude THIS script from the scan — verify.ps1 legitimately names the tokens in its own
+# SEC-GREP guard/comments (a self-match would be a false positive). Use a real alternation
+# regex (NOT -SimpleMatch, which would search for the literal "ARM_CLIENT_SECRET|client_secret").
+$selfPath = $MyInvocation.MyCommand.Path
 $secretMatches = Get-ChildItem -Path $v3Dir -Recurse -File |
-    Select-String -Pattern 'ARM_CLIENT_SECRET|client_secret' -SimpleMatch -ErrorAction SilentlyContinue
+    Where-Object { $_.FullName -ne $selfPath } |
+    Select-String -Pattern 'ARM_CLIENT_SECRET|client_secret' -ErrorAction SilentlyContinue
 if (-not $secretMatches) {
-    Assert-Pass 'SEC-GREP' "No ARM_CLIENT_SECRET or client_secret found under $v3Dir"
+    Assert-Pass 'SEC-GREP' "No ARM_CLIENT_SECRET or client_secret found under $v3Dir (excluding this verify script's own guard text)"
 } else {
     $matchSummary = $secretMatches | ForEach-Object { "$($_.Filename):$($_.LineNumber)" }
     Assert-Fail 'SEC-GREP' "Secret material found in v3/ tree: $($matchSummary -join ', ')"
