@@ -1,0 +1,7 @@
+{
+  "name": "github-nonprod-main",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:LifeDataLLC/V2-Azure-Operations:ref:refs/heads/main",
+  "description": "GitHub Actions OIDC for ld-iac-cicd-nonprod (main branch) — nonprod IaC identity, Phase 1",
+  "audiences": ["api://AzureADTokenExchange"]
+}
