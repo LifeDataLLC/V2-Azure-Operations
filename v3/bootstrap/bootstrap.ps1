@@ -170,7 +170,11 @@ Write-Host "[5] Ensuring state storage account '${saName}' exists in '${stateRg}
 # NOTE: Filter in PowerShell with Where-Object — do NOT use a JMESPath '|' pipe inside
 # --query on Windows (az.cmd re-parses through cmd.exe; Pitfall 5 Windows az.cmd bug).
 $saList = az storage account list -g $stateRg -o json | ConvertFrom-Json
-$sa = @($saList | Where-Object { $_.name -eq $saName })[0]
+# Guard the index: under Set-StrictMode -Version Latest, indexing [0] on an empty
+# match set throws "Index was outside the bounds of the array". Mirror the Phase 1
+# FIC idiom (line ~136) — only index when there is a match, else $null.
+$saMatches = $saList | Where-Object { $_.name -eq $saName }
+$sa = if ($saMatches) { @($saMatches)[0] } else { $null }
 if ($sa) {
     Write-Host "    SKIP: storage account already exists (name=${saName})."
 } else {
