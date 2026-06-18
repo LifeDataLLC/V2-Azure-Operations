@@ -208,14 +208,38 @@ module "storage_env" {
 # --- end storage module call ---
 
 # --- app-service module call (Plan 03-06) ---
-# module "app_service" {
-#   source   = "./modules/app-service"
-#   for_each = local.enabled_envs
-#
-#   env                 = each.key
-#   config              = each.value
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # app map + plan SKU variables wired by Plan 03-06
-# }
+# Per-env: for_each over local.enabled_envs (D-301a: dev only in v1).
+# D-303: one app-service stack per enabled env — add/remove env = a tfvars edit.
+# D-307: all posture/plan vars fed from root-level variables (set per tfvars, no defaults).
+# T-03-19: app_settings use KV references via system-assigned MI — no literal secrets.
+# T-03-20: module issues azurerm_role_assignment (Key Vault Secrets User) for each app MI.
+module "app_service" {
+  source   = "./modules/app-service"
+  for_each = local.enabled_envs # one app-service stack per enabled env (D-301a: dev only in v1)
+
+  # Environment identity
+  env = each.key
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # App Service Plan names + SKUs (D-307 no-default — diverge between envs and scopes)
+  web_plan_name      = var.app_service_plans[each.key].web_plan_name
+  web_plan_sku       = var.app_service_plans[each.key].web_plan_sku
+  function_plan_name = var.app_service_plans[each.key].function_plan_name
+  function_plan_sku  = var.app_service_plans[each.key].function_plan_sku
+
+  # Per-env app maps (D-303 for_each inside the module)
+  web_app_map      = lookup(var.web_app_maps, each.key, {})
+  function_app_map = lookup(var.function_app_maps, each.key, {})
+
+  # Networking wiring — subnet IDs from module.networking
+  app_subnet_id          = module.networking.app_subnet_id
+  function_app_subnet_id = module.networking.function_app_subnet_id
+
+  # Key Vault wiring — KV id + uri from module.keyvault (T-03-19/T-03-20)
+  key_vault_id  = module.keyvault.key_vault_id
+  key_vault_uri = module.keyvault.key_vault_uri
+}
 # --- end app-service module call ---

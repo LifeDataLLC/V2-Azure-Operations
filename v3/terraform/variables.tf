@@ -398,7 +398,100 @@ variable "kv_access_policies" {
 # ---------------------------------------------------------------------------
 
 # --- app-service posture vars (Plan 03-06) ---
-# (Module plan 03-06 adds app service plan + app map variables here)
+# D-307: NO `default` on any of these — each value set explicitly in both tfvars
+# with cited evidence from data/appservice_plans.json and data/prod_webapps_config/.
+# D-303: web_app_maps and function_app_maps are the per-env parameterization surface.
+# T-03-19: web_app_map / function_app_map values MUST NOT contain literal secrets.
+# T-03-22: per-app posture fields (always_on, min_tls_version) are no-default map fields.
+
+variable "app_service_plans" {
+  description = <<-EOT
+    Per-environment App Service Plan names and SKUs (D-307 no-default).
+    Key = environment key (matching var.environments keys: "dev", "qa", "staging", "prod").
+    Each entry carries web_plan_name, web_plan_sku, function_plan_name, function_plan_sku.
+
+    Evidence (appservice_plans.json):
+      dev:     web=plan-dev-eastus(B2),      func=plan-common-nonproduction-eastus(B2)
+      qa:      web=plan-common-nonproduction-eastus(B2), func=plan-qa-eastus(B1)
+      staging: web=plan-staging-eastus(B2),  func=plan-staging-eastus(B2)
+      prod:    web=plan-prod-eastus(P1mv3),  func=plan-prod-eastus(P1mv3)
+
+    NO DEFAULT (D-307) — plan names and SKUs differ between envs and scopes.
+  EOT
+  type = map(object({
+    web_plan_name      = string
+    web_plan_sku       = string
+    function_plan_name = string
+    function_plan_sku  = string
+  }))
+  # NO default — set per scope in nonprod.tfvars / prod.tfvars (D-307)
+}
+
+variable "web_app_maps" {
+  description = <<-EOT
+    Per-environment web app maps (D-303 for_each — the per-env app surface).
+    Outer key = environment key (matching var.environments keys).
+    Inner map  = per-app config objects; key = Azure resource name (e.g. "app-db-dev-eastus").
+
+    Each app object carries:
+      always_on        — bool.   Evidence: data/prod_webapps_config/*.json alwaysOn.
+      app_command_line — string. Startup command (pm2 for node, "" for dotnet).
+      dotnet_version   — string or null. .NET version; null for node apps.
+      node_version     — string or null. Node.js version; null for dotnet apps.
+
+    NOTE: min_tls_version is NOT a valid azurerm_linux_web_app argument in azurerm v4.
+    TLS posture is enforced via https_only=true (D-308 constant). Live-read values
+    (all = "1.2") are documented in tfvars comments for audit trail only.
+
+    D-303: Add/remove an app = a tfvars map edit; no code change required.
+    D-305: hidden-link:/app-insights tags NOT present (dropped in module).
+    T-03-19: NO literal secrets/connection strings in this map — KV references only.
+    NO DEFAULT (D-307) — per-app posture and stack version are divergence-bearing.
+  EOT
+  type = map(map(object({
+    always_on        = bool
+    app_command_line = string
+    dotnet_version   = string
+    node_version     = string
+  })))
+  # NO default — set per scope in nonprod.tfvars / prod.tfvars (D-307)
+}
+
+variable "function_app_maps" {
+  description = <<-EOT
+    Per-environment function app maps (D-303 for_each hybrid).
+    Outer key = environment key (matching var.environments keys).
+    Inner map  = per-app config objects; key = Azure resource name
+                 (e.g. "fapp-process-response-dev-eastus").
+
+    Each app object carries:
+      always_on                  — bool. Evidence: prod live read alwaysOn=true.
+      node_version               — string. Node version for application_stack.
+                                   Evidence: prod live read Node|22.
+      storage_account_name       — string. Not sensitive; bound to function host.
+      storage_access_key_kv_name — string. KV secret name for storage account access key.
+                                   Module builds @Microsoft.KeyVault() reference. T-03-19.
+      builtin_logging_enabled    — bool. false for all prod function apps (nonprod HCL evidence).
+      client_certificate_mode    — string. "Required" for nonprod (HCL evidence).
+
+    NOTE: min_tls_version is NOT a valid azurerm_linux_function_app argument in azurerm v4.
+    TLS posture enforced via https_only=true. Live-read values (1.2 / 1.3 for stag fapp)
+    are documented in tfvars comments for audit trail.
+
+    T-03-19: storage_access_key_kv_name is a secret NAME, not the secret VALUE.
+    NO DEFAULT (D-307) — per-app posture and storage binding are divergence-bearing.
+  EOT
+  type = map(map(object({
+    always_on                  = bool
+    node_version               = string
+    storage_account_name       = string
+    storage_access_key_kv_name = string
+    builtin_logging_enabled    = bool
+    client_certificate_mode    = string
+  })))
+  # NO default — set per scope in nonprod.tfvars / prod.tfvars (D-307)
+}
+
 # --- end app-service posture vars ---
 
 # ---------------------------------------------------------------------------

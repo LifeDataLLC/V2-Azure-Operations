@@ -309,7 +309,6 @@ storage_env_accounts = {
       account_replication_type        = "LRS"        # evidence: storage_accounts.json sku.name="Standard_LRS"
       allow_nested_items_to_be_public = true         # evidence: storage_accounts.json allowBlobPublicAccess=true
       shared_access_key_enabled       = true         # evidence: storage_accounts.json allowSharedKeyAccess=true
-      min_tls_version                 = "TLS1_2"     # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
       network_default_action          = "Allow"      # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
       large_file_shares_enabled       = false        # evidence: storage_accounts.json largeFileSharesState=null
       sas_expiry_period               = "1.00:00:00" # evidence: storage_accounts.json sasPolicy.sasExpirationPeriod="1.00:00:00"
@@ -380,13 +379,12 @@ storage_env_accounts = {
     "ldstqa" = {
       name                            = "ldstqaeastus"
       location                        = "eastus"
-      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
-      allow_nested_items_to_be_public = false    # evidence: storage_accounts.json allowBlobPublicAccess=false
-      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=null (provider default=true)
-      min_tls_version                 = "TLS1_0" # T-03-18 EXCEPTION: evidence: storage_accounts.json minimumTlsVersion="TLS1_0"
-      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
-      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
-      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      account_replication_type        = "LRS"   # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = false   # evidence: storage_accounts.json allowBlobPublicAccess=false
+      shared_access_key_enabled       = true    # evidence: storage_accounts.json allowSharedKeyAccess=null (provider default=true)
+      network_default_action          = "Allow" # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false   # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""      # evidence: storage_accounts.json sasPolicy=null
       containers = [
         "azure-webjobs-hosts",
         "azure-webjobs-secrets",
@@ -432,13 +430,12 @@ storage_env_accounts = {
     "stqanonproduction" = {
       name                            = "stqanonproductioneastus"
       location                        = "eastus"
-      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
-      allow_nested_items_to_be_public = true     # evidence: storage_accounts.json allowBlobPublicAccess=true
-      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=true
-      min_tls_version                 = "TLS1_2" # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
-      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
-      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
-      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      account_replication_type        = "LRS"   # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = true    # evidence: storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true    # evidence: storage_accounts.json allowSharedKeyAccess=true
+      network_default_action          = "Allow" # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false   # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""      # evidence: storage_accounts.json sasPolicy=null
       containers = [
         "$web",
         "azure-webjobs-hosts",
@@ -521,7 +518,173 @@ kv_access_policies = []
 # ---------------------------------------------------------------------------
 
 # --- app-service values (Plan 03-06) ---
-# (Plan 03-06 adds app map (per-env ~13 nonprod apps) and plan SKU values here)
+# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf:2620-4040 (nonprod app HCL shapes)
+#           data/appservice_plans.json (plan names and SKUs)
+# D-303: web_app_maps + function_app_maps are the per-env app surfaces.
+# D-305: hidden-link:/app-insights tags DROPPED; app_command_line reproduced from HCL.
+# D-307: All posture values (always_on, min_tls_version, plan SKU) explicit + evidence-cited.
+# T-03-19: NO literal secrets/connection strings — storage keys via KV secret name only.
+# T-03-22: Per-app posture from nonprod HCL reference.
+
+# Per-environment App Service Plan names and SKUs.
+# Evidence: appservice_plans.json (all nonprod plans)
+app_service_plans = {
+  dev = {
+    # Web apps use plan-dev-eastus (B2, 6 sites). evidence: appservice_plans.json
+    web_plan_name = "plan-dev-eastus"
+    web_plan_sku  = "B2"
+    # Function app uses plan-common-nonproduction-eastus (B2). evidence: main.tf:2803 res-2123
+    function_plan_name = "plan-common-nonproduction-eastus"
+    function_plan_sku  = "B2"
+  }
+  qa = {
+    # QA web apps share plan-common-nonproduction-eastus (B2, 7 sites). evidence: appservice_plans.json
+    web_plan_name = "plan-common-nonproduction-eastus"
+    web_plan_sku  = "B2"
+    # QA function app uses plan-qa-eastus (B1). evidence: appservice_plans.json + main.tf:3055 res-2125
+    function_plan_name = "plan-qa-eastus"
+    function_plan_sku  = "B1"
+  }
+}
+
+# Per-environment web app maps (D-303 for_each).
+# Dev: 6 web apps on plan-dev-eastus. QA: 6 web apps on plan-common-nonproduction-eastus.
+# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf (azurerm_linux_web_app blocks).
+# app_command_line from HCL site_config.app_command_line; dotnet_version/node_version from
+# linuxFxVersion (nonprod export does not have linuxFxVersion; default to matching prod canonical).
+web_app_maps = {
+  dev = {
+    # app-db-dev-eastus: .NET 8.0 API. evidence: nonprod HCL res-2126; prod canonical DOTNETCORE|8.0
+    "app-db-dev-eastus" = {
+      always_on        = false # evidence: nonprod HCL res-2126 site_config.always_on=false
+      app_command_line = ""    # evidence: nonprod HCL res-2126 (no app_command_line)
+      dotnet_version   = "8.0" # evidence: prod canonical DOTNETCORE|8.0
+      node_version     = null
+    }
+    # data-access-dev-eastus: Node.js API. evidence: nonprod HCL res-2144
+    "data-access-dev-eastus" = {
+      always_on        = false                                   # evidence: nonprod HCL res-2144 always_on=false
+      app_command_line = "pm2-runtime start ecosystem.config.js" # evidence: nonprod HCL res-2144:2731
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod canonical NODE|22-lts
+    }
+    # mobile-backend-dev-eastus: Node.js API. evidence: nonprod HCL res-2227
+    "mobile-backend-dev-eastus" = {
+      always_on        = false                                   # evidence: nonprod HCL res-2227 site_config.always_on=false
+      app_command_line = "pm2-runtime start ecosystem.config.js" # evidence: nonprod HCL res-2227:3287
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod canonical NODE|22-lts
+    }
+    # study-module-dev-eastus: Node.js API. evidence: nonprod HCL res-2248
+    "study-module-dev-eastus" = {
+      always_on        = false                                                                            # evidence: nonprod HCL (study-module-dev always_on not set → false)
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: nonprod HCL res-2248 area
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod canonical NODE|22-lts
+    }
+    # user-module-dev-eastus: Node.js API. evidence: nonprod HCL res-~3440
+    "user-module-dev-eastus" = {
+      always_on        = false                                                                            # evidence: nonprod HCL (no always_on set)
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod canonical
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod canonical NODE|22-lts
+    }
+    # web-frontend-dev-eastus: Node.js SPA frontend. evidence: nonprod HCL res-2365
+    "web-frontend-dev-eastus" = {
+      always_on        = false                                                                          # evidence: nonprod HCL res-2365:4010 always_on=false
+      app_command_line = "npm install pm2@latest -g && pm2 serve /home/site/wwwroot/ --no-daemon --spa" # evidence: nonprod HCL res-2365:4011
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod canonical NODE|22-lts
+    }
+  }
+
+  qa = {
+    # app-db-qa-nonproduction-eastus: .NET 8.0 API. evidence: nonprod HCL res-2135
+    "app-db-qa-nonproduction-eastus" = {
+      always_on        = false # evidence: nonprod HCL res-2135 (no always_on)
+      app_command_line = ""
+      dotnet_version   = "8.0"
+      node_version     = null
+    }
+    # data-access-qa-nonproduction-eastus: Node.js API. evidence: nonprod HCL res-2159
+    "data-access-qa-nonproduction-eastus" = {
+      always_on        = false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: nonprod HCL res-2159:2764
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+    # mobile-backend-qa-nonproduction-eastus: Node.js API. evidence: nonprod HCL res-~3949
+    "mobile-backend-qa-nonproduction-eastus" = {
+      always_on        = false
+      app_command_line = "pm2-runtime start ecosystem.config.js"
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+    # storage-service-qa-nonproduction-eastus: Node.js API. evidence: nonprod HCL res-2242
+    "storage-service-qa-nonproduction-eastus" = {
+      always_on        = false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: nonprod HCL res-2242:3320
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+    # study-module-qa-nonproduction-eastus: Node.js API. evidence: nonprod HCL res-~3385
+    "study-module-qa-nonproduction-eastus" = {
+      always_on        = false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon"
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+    # user-module-qa-eastus: Node.js API. evidence: nonprod HCL res-~3496
+    "user-module-qa-eastus" = {
+      always_on        = false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon"
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+    # web-frontend-qa-nonproduction-eastus: Node.js SPA frontend. evidence: nonprod HCL res-~3543
+    "web-frontend-qa-nonproduction-eastus" = {
+      always_on        = false
+      app_command_line = "npm install pm2@latest -g && pm2 serve /home/site/wwwroot/ --no-daemon --spa"
+      dotnet_version   = null
+      node_version     = "22-lts"
+    }
+  }
+}
+
+# Per-environment function app maps (D-303 hybrid).
+# Dev: 1 function app (fapp-process-response-dev-eastus). QA: 1 function app.
+# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf:2779-3260 (dev fapp res-2174),
+#           terraform/LD-NonProd-EastUS-V2/main.tf:3035-3263 (qa fapp res-2201).
+# T-03-19: storage_access_key_kv_name is the KV SECRET NAME, not the key value.
+#           The literal key in the nonprod HCL (res-2174:2804) is the anti-pattern being fixed.
+function_app_maps = {
+  dev = {
+    # fapp-process-response-dev-eastus: Node.js 22, timer-triggered queue processor.
+    # evidence: nonprod HCL res-2174; storage=ldstdeveastus (line 2805).
+    "fapp-process-response-dev-eastus" = {
+      always_on                  = false                               # evidence: nonprod HCL (no always_on in site_config)
+      node_version               = "22"                                # evidence: nonprod HCL res-2174 site_config node_version="22"
+      storage_account_name       = "ldstdeveastus"                     # evidence: nonprod HCL res-2174:2805
+      storage_access_key_kv_name = "ldstdeveastus--storage-access-key" # KV secret name (T-03-19)
+      builtin_logging_enabled    = false                               # evidence: nonprod HCL res-2174:2797 builtin_logging_enabled=false
+      client_certificate_mode    = "Required"                          # evidence: nonprod HCL res-2174:2798
+    }
+  }
+
+  qa = {
+    # fapp-process-response-qa-eastus: Node.js 22, timer-triggered queue processor.
+    # evidence: nonprod HCL res-2201; storage=ldstqaeastus (line 3057).
+    "fapp-process-response-qa-eastus" = {
+      always_on                  = false
+      node_version               = "22"                               # evidence: nonprod HCL res-2201 site_config node_version="22"
+      storage_account_name       = "ldstqaeastus"                     # evidence: nonprod HCL res-2201:3057
+      storage_access_key_kv_name = "ldstqaeastus--storage-access-key" # KV secret name (T-03-19)
+      builtin_logging_enabled    = false                              # evidence: nonprod HCL res-2201:3049
+      client_certificate_mode    = "Required"                         # evidence: nonprod HCL res-2201:3050
+    }
+  }
+}
+
 # --- end app-service values ---
 
 # ---------------------------------------------------------------------------

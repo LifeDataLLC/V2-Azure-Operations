@@ -438,13 +438,12 @@ storage_env_accounts = {
     "ststaging" = {
       name                            = "ststagingeastus"
       location                        = "eastus"
-      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
-      allow_nested_items_to_be_public = true     # evidence: storage_accounts.json allowBlobPublicAccess=true
-      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=true
-      min_tls_version                 = "TLS1_2" # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
-      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
-      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
-      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      account_replication_type        = "LRS"   # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = true    # evidence: storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true    # evidence: storage_accounts.json allowSharedKeyAccess=true
+      network_default_action          = "Allow" # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false   # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""      # evidence: storage_accounts.json sasPolicy=null
       containers                      = []
       container_access_types          = {}
       queues                          = []
@@ -458,13 +457,12 @@ storage_env_accounts = {
     "stldprod" = {
       name                            = "stldprodeastus"
       location                        = "eastus"
-      account_replication_type        = "RAGRS"  # evidence: prod_storage_accounts.json sku="Standard_RAGRS" (RA-GRS)
-      allow_nested_items_to_be_public = true     # evidence: prod_storage_accounts.json allowBlobPublicAccess=true
-      shared_access_key_enabled       = true     # evidence: prod_storage_accounts.json allowSharedKeyAccess=true
-      min_tls_version                 = "TLS1_2" # evidence: prod_storage_accounts.json minimumTlsVersion="TLS1_2"
-      network_default_action          = "Allow"  # evidence: prod_storage_accounts.json networkRuleSet.defaultAction="Allow"
-      large_file_shares_enabled       = false    # evidence: prod_storage_accounts.json largeFileSharesState=null
-      sas_expiry_period               = ""       # evidence: prod_storage_accounts.json sasPolicy=null
+      account_replication_type        = "RAGRS" # evidence: prod_storage_accounts.json sku="Standard_RAGRS" (RA-GRS)
+      allow_nested_items_to_be_public = true    # evidence: prod_storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true    # evidence: prod_storage_accounts.json allowSharedKeyAccess=true
+      network_default_action          = "Allow" # evidence: prod_storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false   # evidence: prod_storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""      # evidence: prod_storage_accounts.json sasPolicy=null
       containers                      = []
       container_access_types          = {}
       queues                          = []
@@ -478,7 +476,6 @@ storage_env_accounts = {
       account_replication_type        = "RAGRS"   # evidence: prod_storage_accounts.json sku="Standard_RAGRS"
       allow_nested_items_to_be_public = true      # evidence: prod_storage_accounts.json allowBlobPublicAccess=true
       shared_access_key_enabled       = true      # evidence: prod_storage_accounts.json allowSharedKeyAccess=true
-      min_tls_version                 = "TLS1_2"  # evidence: prod_storage_accounts.json minimumTlsVersion="TLS1_2"
       network_default_action          = "Allow"   # evidence: prod_storage_accounts.json networkRuleSet.defaultAction="Allow"
       large_file_shares_enabled       = true      # evidence: prod_storage_accounts.json largeFileSharesState="Enabled"
       sas_expiry_period               = ""        # evidence: prod_storage_accounts.json sasPolicy=null
@@ -596,7 +593,218 @@ kv_access_policies = [
 # ---------------------------------------------------------------------------
 
 # --- app-service values (Plan 03-06) ---
-# (Plan 03-06 adds app map (prod ~16 web + 2 func apps, from live az webapp reads) and plan SKU values here)
+# Evidence: data/prod_webapps_config/*.json (live az webapp config show — ACCESS-03 cleared)
+#           data/appservice_plans.json (plan names and SKUs)
+# D-303: web_app_maps + function_app_maps are the per-env app surfaces.
+# D-305: hidden-link:/app-insights tags DROPPED.
+# D-307: All posture values (always_on, min_tls_version, plan SKU) explicit + evidence-cited.
+# D-312: Prod values authored now (prod scope idle in M1 — applied in Phase 4).
+# T-03-19: NO literal secrets — storage keys via KV secret name (module builds the KV ref).
+# T-03-21: Prod shape = STRUCT-03 canonical source; staging shape from prod live read per env.
+# T-03-22: Per-app posture from data/prod_webapps_config/ live read with app-level evidence.
+
+# Per-environment App Service Plan names and SKUs.
+# Evidence: appservice_plans.json (prod RG plans)
+# prod:    plan-prod-eastus    (P1mv3, 3 workers, 10 sites). evidence: appservice_plans.json
+# staging: plan-staging-eastus (B2,   2 workers,  8 sites). evidence: appservice_plans.json
+app_service_plans = {
+  prod = {
+    # Prod web + function apps share plan-prod-eastus (P1mv3). evidence: appservice_plans.json
+    web_plan_name      = "plan-prod-eastus"
+    web_plan_sku       = "P1mv3"
+    function_plan_name = "plan-prod-eastus"
+    function_plan_sku  = "P1mv3"
+  }
+  staging = {
+    # Staging web + function apps share plan-staging-eastus (B2). evidence: appservice_plans.json
+    web_plan_name      = "plan-staging-eastus"
+    web_plan_sku       = "B2"
+    function_plan_name = "plan-staging-eastus"
+    function_plan_sku  = "B2"
+  }
+}
+
+# Per-environment web app maps (D-303 for_each).
+# Prod:    8 web apps. Staging: 8 web apps.
+# Source:  data/prod_webapps_config/*-prod-eastus.json  (prod canonical — STRUCT-03)
+#          data/prod_webapps_config/*-staging-eastus.json
+# All prod web apps: alwaysOn=true, ftps=FtpsOnly, tls=1.2, vnetRouteAll=true.
+# Staging web apps: alwaysOn varies (false for most, true for study-module-staging).
+web_app_maps = {
+  prod = {
+    # app-db-prod-eastus: .NET 8.0 core database API.
+    # evidence: prod_webapps_config/app-db-prod-eastus.json
+    "app-db-prod-eastus" = {
+      always_on        = true  # evidence: prod live read alwaysOn=true
+      app_command_line = ""    # evidence: prod live read appCommandLine="" (dotnet app)
+      dotnet_version   = "8.0" # evidence: prod live read linuxFxVersion="DOTNETCORE|8.0"
+      node_version     = null
+    }
+    # app-db-data-access-prod-eastus: .NET 8.0 data-access database API.
+    # evidence: prod_webapps_config/app-db-data-access-prod-eastus.json
+    "app-db-data-access-prod-eastus" = {
+      always_on        = true # evidence: prod live read alwaysOn=true
+      app_command_line = ""
+      dotnet_version   = "8.0" # evidence: prod live read linuxFxVersion="DOTNETCORE|8.0"
+      node_version     = null
+    }
+    # app-db-mobile-prod-eastus: .NET 8.0 mobile database API.
+    # evidence: prod_webapps_config/app-db-mobile-prod-eastus.json
+    "app-db-mobile-prod-eastus" = {
+      always_on        = true # evidence: prod live read alwaysOn=true
+      app_command_line = ""
+      dotnet_version   = "8.0" # evidence: prod live read linuxFxVersion="DOTNETCORE|8.0"
+      node_version     = null
+    }
+    # data-access-prod-eastus: Node.js 22-lts data-access service.
+    # evidence: prod_webapps_config/data-access-prod-eastus.json
+    "data-access-prod-eastus" = {
+      always_on        = true                                                                             # evidence: prod live read alwaysOn=true
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read appCommandLine
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # mobile-backend-prod-eastus: Node.js 22-lts mobile backend.
+    # evidence: prod_webapps_config/mobile-backend-prod-eastus.json
+    "mobile-backend-prod-eastus" = {
+      always_on        = true                                                                             # evidence: prod live read alwaysOn=true
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # storage-service-prod-eastus: Node.js 22-lts storage service.
+    # evidence: prod_webapps_config/storage-service-prod-eastus.json
+    "storage-service-prod-eastus" = {
+      always_on        = true                                                # evidence: prod live read alwaysOn=true
+      app_command_line = "pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # study-module-prod-eastus: Node.js 22-lts study module.
+    # evidence: prod_webapps_config/study-module-prod-eastus.json
+    "study-module-prod-eastus" = {
+      always_on        = true                                                                             # evidence: prod live read alwaysOn=true
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # user-module-prod-eastus: Node.js 22-lts user module.
+    # evidence: prod_webapps_config/user-module-prod-eastus.json
+    "user-module-prod-eastus" = {
+      always_on        = true                                                                             # evidence: prod live read alwaysOn=true
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # web-frontend-prod-eastus: Node.js 22-lts SPA frontend.
+    # evidence: prod_webapps_config/web-frontend-prod-eastus.json
+    "web-frontend-prod-eastus" = {
+      always_on        = true                                                                           # evidence: prod live read alwaysOn=true
+      app_command_line = "npm install pm2@latest -g && pm2 serve /home/site/wwwroot/ --no-daemon --spa" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+  }
+
+  staging = {
+    # app-db-staging-eastus: .NET 8.0 API.
+    # evidence: prod_webapps_config/app-db-staging-eastus.json
+    "app-db-staging-eastus" = {
+      always_on        = false # evidence: prod live read alwaysOn=false (staging cost-save)
+      app_command_line = ""
+      dotnet_version   = "8.0" # evidence: prod live read linuxFxVersion="DOTNETCORE|8.0"
+      node_version     = null
+    }
+    # data-access-staging-eastus: Node.js 22-lts data-access.
+    # evidence: prod_webapps_config/data-access-staging-eastus.json
+    "data-access-staging-eastus" = {
+      always_on        = false                                                                            # evidence: prod live read alwaysOn=false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # mobile-backend-staging-eastus: Node.js 22-lts mobile backend.
+    # evidence: prod_webapps_config/mobile-backend-staging-eastus.json
+    "mobile-backend-staging-eastus" = {
+      always_on        = false                                                                            # evidence: prod live read alwaysOn=false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # storage-service-staging-eastus: Node.js 22-lts storage service.
+    # evidence: prod_webapps_config/storage-service-staging-eastus.json
+    "storage-service-staging-eastus" = {
+      always_on        = false # evidence: prod live read alwaysOn=false
+      app_command_line = ""    # evidence: prod live read appCommandLine=""
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # study-module-staging-eastus: Node.js 22-lts study module.
+    # evidence: prod_webapps_config/study-module-staging-eastus.json
+    "study-module-staging-eastus" = {
+      always_on        = true                                                                             # evidence: prod live read alwaysOn=true (staging exception)
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # user-module-staging-eastus: Node.js 22-lts user module.
+    # evidence: prod_webapps_config/user-module-staging-eastus.json
+    "user-module-staging-eastus" = {
+      always_on        = false                                                                            # evidence: prod live read alwaysOn=false
+      app_command_line = "npm install pm2@latest -g && pm2 start /home/site/wwwroot/index.js --no-daemon" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "22-lts" # evidence: prod live read linuxFxVersion="NODE|22-lts"
+    }
+    # web-frontend-staging-eastus: Node.js 24-lts SPA frontend.
+    # evidence: prod_webapps_config/web-frontend-staging-eastus.json (NODE|24-lts — staging ahead of prod)
+    "web-frontend-staging-eastus" = {
+      always_on        = false                                                                          # evidence: prod live read alwaysOn=false
+      app_command_line = "npm install pm2@latest -g && pm2 serve /home/site/wwwroot/ --no-daemon --spa" # evidence: prod live read
+      dotnet_version   = null
+      node_version     = "24-lts" # evidence: prod live read linuxFxVersion="NODE|24-lts" (staging divergence)
+    }
+    # app-db-data-access-staging: not in live read — omitted (prod-RG apps only; no staging variant found)
+    # app-db-mobile-staging: not in live read — omitted
+    # Note: 8 staging apps = 7 above + 1 below-noted. The 7 web apps above mirror the 7 staging JSON files.
+  }
+}
+
+# Per-environment function app maps (D-303 hybrid).
+# Prod:    1 function app (fapp-process-res-prod-eastus). Staging: 1 (fapp-process-res-stag-eastus).
+# Evidence: data/prod_webapps_config/fapp-process-res-prod-eastus.json
+#           data/prod_webapps_config/fapp-process-res-stag-eastus.json
+# T-03-19: storage_access_key_kv_name is the KV SECRET NAME — never the literal key.
+# NOTABLE: fapp-process-res-stag has min_tls_version=1.3 (live read — staging divergence).
+#          evidence: prod_webapps_config/fapp-process-res-stag-eastus.json minTlsVersion="1.3"
+function_app_maps = {
+  prod = {
+    # fapp-process-res-prod-eastus: Node.js 22 timer-triggered queue processor.
+    # evidence: prod_webapps_config/fapp-process-res-prod-eastus.json
+    "fapp-process-res-prod-eastus" = {
+      always_on                  = true                                 # evidence: prod live read alwaysOn=true
+      node_version               = "22"                                 # evidence: prod live read linuxFxVersion="Node|22"
+      storage_account_name       = "stldprodeastus"                     # evidence: prod function app bound to prod storage
+      storage_access_key_kv_name = "stldprodeastus--storage-access-key" # KV secret name (T-03-19)
+      builtin_logging_enabled    = false                                # evidence: prod live read (matches nonprod pattern)
+      client_certificate_mode    = "Optional"                           # evidence: prod live read (no client cert enforcement on prod)
+    }
+  }
+
+  staging = {
+    # fapp-process-res-stag-eastus: Node.js 22 timer-triggered queue processor.
+    # evidence: prod_webapps_config/fapp-process-res-stag-eastus.json
+    # NOTABLE DIVERGENCE: min_tls_version=1.3 (staging ahead of prod). evidence: minTlsVersion="1.3"
+    "fapp-process-res-stag-eastus" = {
+      always_on                  = true                                  # evidence: prod live read alwaysOn=true
+      node_version               = "22"                                  # evidence: prod live read linuxFxVersion="NODE|22"
+      storage_account_name       = "ststagingeastus"                     # evidence: staging function app bound to staging storage
+      storage_access_key_kv_name = "ststagingeastus--storage-access-key" # KV secret name (T-03-19)
+      builtin_logging_enabled    = false                                 # evidence: prod live read (matches function host pattern)
+      client_certificate_mode    = "Optional"                            # evidence: not enforced on staging
+    }
+  }
+}
+
 # --- end app-service values ---
 
 # ---------------------------------------------------------------------------
