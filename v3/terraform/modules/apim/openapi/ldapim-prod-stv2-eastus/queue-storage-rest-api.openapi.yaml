@@ -1,0 +1,1139 @@
+openapi: 3.0.1
+info:
+  title: Queue Storage REST API
+  description: APIM wrapper for accessing the Azure Queue Storage REST API
+  version: '1.0'
+servers:
+  - url: https://api.lifedatacorp.com/queue-service
+paths:
+  /:
+    get:
+      tags:
+        - Queue
+      summary: Get Messages
+      description: This action will be used to retrieve  mobile responses from the Storage Queue Service
+      operationId: get-queue-message
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: QueueName
+          in: header
+          description: The name of the Target Queue we intend to access
+          required: true
+          schema:
+            enum:
+              - block-response
+              - block-response-error
+              - media-response
+              - media-response-error
+              - participant-info
+              - participant-info-error
+              - participant-response
+              - participant-response-error
+              - push-response
+              - push-response-error
+              - question-response
+              - question-response-error
+              - question-response-multi-select
+              - question-response-multi-select-error
+              - score-response
+              - score-response-error
+              - session-instance-response
+              - session-instance-response-error
+              - session-reminder-response
+              - session-reminder-response-error
+              - session-response
+              - session-response-error
+              - trigger-response
+              - trigger-response-error
+            type: string
+            example: participant-info
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+        - Queue
+      summary: Put a Message in Queue
+      description: This action will be used to store a mobile response in Storage Queue Service
+      operationId: post-queue-message
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: QueueName
+          in: header
+          description: The name of the Target Queue we intend to access
+          required: true
+          schema:
+            enum:
+              - block-response
+              - block-response-error
+              - media-response
+              - media-response-error
+              - participant-info
+              - participant-info-error
+              - participant-response
+              - participant-response-error
+              - push-response
+              - push-response-error
+              - question-response
+              - question-response-error
+              - question-response-multi-select
+              - question-response-multi-select-error
+              - score-response
+              - score-response-error
+              - session-instance-response
+              - session-instance-response-error
+              - session-reminder-response
+              - session-reminder-response-error
+              - session-response
+              - session-response-error
+              - trigger-response
+              - trigger-response-error
+            type: string
+            example: participant-info
+      requestBody:
+        description: XML Object containing the JSON Stringified response from mobile
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/QueueMessage'
+            example: <QueueMessage> <MessageText>the stringified JSON will go here. Should be utf-8 encoded</MessageText> </QueueMessage>
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /participant-info:
+    post:
+      summary: Upload Participant Info Response
+      description: This action will be used to upload Participant Info Response
+      operationId: participant-info
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;ParticipantInfoID [bigint]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;DeviceOS [varchar]<br>\n&nbsp;&nbsp;OSVersion [int]<br>\n&nbsp;&nbsp;DeviceType [varchar]<br>\n&nbsp;&nbsp;AppVersion [varchar]<br>\n&nbsp;&nbsp;ChangedDT [datetime]\n"
+              example:
+                - 'ParticipantInfoID”: 1,“ParticipantID': 1
+                  DeviceOS: android
+                  OSVersion: 35
+                  DeviceType: Samsung
+                  AppVersion: '5'
+                  ChangedDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - 'ParticipantInfoID”: 1,“ParticipantID': 1
+                DeviceOS: android
+                OSVersion: 35
+                DeviceType: Samsung
+                AppVersion: '5'
+                ChangedDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /block-response:
+    post:
+      summary: Upload block Response
+      description: This action will be used to upload Block Response
+      operationId: block-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;BlockResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceSeqNum [int]<br>\n&nbsp;&nbsp;BlockID [bigint]<br>\n&nbsp;&nbsp;BlockVersion [int]<br>\n&nbsp;&nbsp;LogicID [bigint]<br>\n&nbsp;&nbsp;LogicVersion [int]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - BlockResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  BlockID: 1
+                  BlockVersion: 1
+                  LogicID: 1
+                  LogicVersion: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - BlockResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  BlockID: 1
+                  BlockVersion: 1
+                  LogicID: 1
+                  LogicVersion: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - BlockResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                BlockID: 1
+                BlockVersion: 1
+                LogicID: 1
+                LogicVersion: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - BlockResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                BlockID: 1
+                BlockVersion: 1
+                LogicID: 1
+                LogicVersion: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /media-response:
+    post:
+      summary: Upload Media Response
+      description: This action will be used to upload Media Response
+      operationId: media-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;MediaResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceSeqNum [int]<br>\n&nbsp;&nbsp;QuestionID [bigint]<br>\n&nbsp;&nbsp;QuestionVersion [int]<br>\n&nbsp;&nbsp;MediaType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Photo<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Audio<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Video<br>\n&nbsp;&nbsp;MediaPath [varchar](256)<br>\n&nbsp;&nbsp;MediaName [varchar](256)<br>\n&nbsp;&nbsp;MediaExtension [varchar](10)<br>\n&nbsp;&nbsp;MediaCreateDT [datetime]<br>\n&nbsp;&nbsp;MediaImportDT [datetime]<br>\n&nbsp;&nbsp;MediaSourceType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Camera<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Gallery<br>\n&nbsp;&nbsp;MediaSeqNum [smallint]<br>\n&nbsp;&nbsp;IsMediaFileReceived [bit]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - MediaResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 2
+                  QuestionVersion: 1
+                  MediaType: 1
+                  MediaPath: test-media-path
+                  MediaName: test-media
+                  MediaExtension: jpg
+                  MediaCreateDT: '2023-01-15T04:23:45.0000000+00:00'
+                  MediaImportDT: '2023-01-16T04:45:45.0000000+00:00'
+                  MediaSourceType: 1
+                  MediaSeqNum: 1
+                  IsMediaFileReceived: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - MediaResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 2
+                  QuestionVersion: 1
+                  MediaType: 1
+                  MediaPath: test-media-path
+                  MediaName: test-media
+                  MediaExtension: jpg
+                  MediaCreateDT: '2023-01-15T04:26:45.0000000+00:00'
+                  MediaImportDT: '2023-01-16T04:46:45.0000000+00:00'
+                  MediaSourceType: 1
+                  MediaSeqNum: 1
+                  IsMediaFileReceived: 0
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - MediaResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 2
+                QuestionVersion: 1
+                MediaType: 1
+                MediaPath: test-media-path
+                MediaName: test-media
+                MediaExtension: jpg
+                MediaCreateDT: '2023-01-15T04:23:45.0000000+00:00'
+                MediaImportDT: '2023-01-16T04:45:45.0000000+00:00'
+                MediaSourceType: 1
+                MediaSeqNum: 1
+                IsMediaFileReceived: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - MediaResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 2
+                QuestionVersion: 1
+                MediaType: 1
+                MediaPath: test-media-path
+                MediaName: test-media
+                MediaExtension: jpg
+                MediaCreateDT: '2023-01-15T04:26:45.0000000+00:00'
+                MediaImportDT: '2023-01-16T04:46:45.0000000+00:00'
+                MediaSourceType: 1
+                MediaSeqNum: 1
+                IsMediaFileReceived: 0
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /notif-response:
+    post:
+      summary: Upload Notification Response
+      description: This action will be used to upload Notification Response
+      operationId: notif-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;NotifResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;ScheduleDT [datetime]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - NotifResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  ScheduleDT: '2023-01-16T04:45:45.0000000+00:00'
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - NotifResponseID: 2
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 4
+                  ScheduleDT: '2023-01-16T04:45:45.0000000+00:00'
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - NotifResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                ScheduleDT: '2023-01-16T04:45:45.0000000+00:00'
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - NotifResponseID: 2
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 4
+                ScheduleDT: '2023-01-16T04:45:45.0000000+00:00'
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /notif-trigger-response:
+    post:
+      summary: Upload Notification Trigger Response
+      description: This action will be used to upload Notification Trigger Response
+      operationId: notif-trigger-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;NotifTriggerResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;TriggerID [bigint]<br>\n&nbsp;&nbsp;TriggerAT [datetime]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - NotifTriggerResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  TriggerID: 1
+                  TriggerAT: '2023-01-15T04:45:45.0000000+00:00'
+                  NotifInstanceSeqNum: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - NotifTriggerResponseID: 2
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  TriggerID: 2
+                  TriggerAT: '2023-01-16T04:45:45.0000000+00:00'
+                  NotifInstanceSeqNum: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - NotifTriggerResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                TriggerID: 1
+                TriggerAT: '2023-01-15T04:45:45.0000000+00:00'
+                NotifInstanceSeqNum: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - NotifTriggerResponseID: 2
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                TriggerID: 2
+                TriggerAT: '2023-01-16T04:45:45.0000000+00:00'
+                NotifInstanceSeqNum: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /notification-master-response:
+    post:
+      summary: Upload Notification Master Response
+      description: This action will be used to upload Notification Master Response
+      operationId: notification-master-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;NotificationID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;DeviceIdent [nvarchar](300)<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - NotificationID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  DeviceIdent: DeviceOS=iOS&OSVersion=11.200000&DeviceType=iPhone6&AppVersion=2.6.1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - NotificationID: 2
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  DeviceIdent: DeviceOS=iOS&OSVersion=11.200000&DeviceType=iPhone6&AppVersion=2.6.1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - NotificationID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                DeviceIdent: DeviceOS=iOS&OSVersion=11.200000&DeviceType=iPhone6&AppVersion=2.6.1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - NotificationID: 2
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                DeviceIdent: DeviceOS=iOS&OSVersion=11.200000&DeviceType=iPhone6&AppVersion=2.6.1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /push-response:
+    post:
+      summary: Upload Push Response
+      description: This action will be used to upload Push Response
+      operationId: push-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;PushResponseID [bigint]<br>\n&nbsp;&nbsp;YokePushResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;UserReceivedByType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Push Notif<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Rest API\n"
+              example:
+                - PushResponseID: 1
+                  YokeOrganizationID: 1
+                  YokeStudyID: 1
+                  YokeStudyVersion: 1
+                  YokeParticipantID: 1
+                  YokeStudyDownloadCnt: 1
+                  YokeSessionID: 1
+                  YokeScheduleID: 1
+                  YokeNotifInstanceSeqNum: 1
+                  YokeSessionInstanceSeqNum: 2
+                  YokeQuestionID: 2
+                  YokeQuestionVersion: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  NotifInstanceSeqNum: 1
+                  UserReceivedByType: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - PushResponseID: 2
+                  YokeOrganizationID: 1
+                  YokeStudyID: 1
+                  YokeStudyVersion: 1
+                  YokeParticipantID: 1
+                  YokeStudyDownloadCnt: 1
+                  YokeSessionID: 1
+                  YokeScheduleID: 1
+                  YokeNotifInstanceSeqNum: 1
+                  YokeSessionInstanceSeqNum: 2
+                  YokeQuestionID: 2
+                  YokeQuestionVersion: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  NotifInstanceSeqNum: 1
+                  UserReceivedByType: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - PushResponseID: 1
+                YokeOrganizationID: 1
+                YokeStudyID: 1
+                YokeStudyVersion: 1
+                YokeParticipantID: 1
+                YokeStudyDownloadCnt: 1
+                YokeSessionID: 1
+                YokeScheduleID: 1
+                YokeNotifInstanceSeqNum: 1
+                YokeSessionInstanceSeqNum: 2
+                YokeQuestionID: 2
+                YokeQuestionVersion: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                NotifInstanceSeqNum: 1
+                UserReceivedByType: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - PushResponseID: 2
+                YokeOrganizationID: 1
+                YokeStudyID: 1
+                YokeStudyVersion: 1
+                YokeParticipantID: 1
+                YokeStudyDownloadCnt: 1
+                YokeSessionID: 1
+                YokeScheduleID: 1
+                YokeNotifInstanceSeqNum: 1
+                YokeSessionInstanceSeqNum: 2
+                YokeQuestionID: 2
+                YokeQuestionVersion: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                NotifInstanceSeqNum: 1
+                UserReceivedByType: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /question-response:
+    post:
+      summary: Upload Question Response
+      description: This action will be used to upload Question Response
+      operationId: question-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;QuestionResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceSeqNum [int]<br>\n&nbsp;&nbsp;QuestionID [bigint]<br>\n&nbsp;&nbsp;QuestionVersion [int]<br>\n&nbsp;&nbsp;ParticipantQuestionOrder [int]<br>\n&nbsp;&nbsp;LanguageID [bigint]<br>\n&nbsp;&nbsp;IsSkipped [bit]<br>\n&nbsp;&nbsp;ResponseDT [datetime]<br>\n&nbsp;&nbsp;ResponseLapse [bigint]<br>\n&nbsp;&nbsp;ViewLaps [bigint]<br>\n&nbsp;&nbsp;InRespondedQueue [bit]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - QuestionResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 1
+                  QuestionVersion: 1
+                  ParticipantQuestionText: Participant Question Text 1
+                  ParticipantQuestionOrder: 1
+                  LanguageID: 1
+                  IsSkipped: 0
+                  ResponseValue: Test Response 1
+                  ResponseDT: '2023-01-11T04:45:45.0000000+00:00'
+                  ResponseLapse: 11234
+                  ViewLaps: 12345
+                  InRespondedQueue: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - QuestionResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 2
+                  QuestionVersion: 1
+                  ParticipantQuestionText: Participant Question Text 2
+                  ParticipantQuestionOrder: 1
+                  LanguageID: 1
+                  IsSkipped: 0
+                  ResponseValue: Test Response 2
+                  ResponseDT: '2023-01-11T04:47:45.0000000+00:00'
+                  ResponseLapse: 11234
+                  ViewLaps: 12345
+                  InRespondedQueue: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - QuestionResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 1
+                QuestionVersion: 1
+                ParticipantQuestionText: Participant Question Text 1
+                ParticipantQuestionOrder: 1
+                LanguageID: 1
+                IsSkipped: 0
+                ResponseValue: Test Response 1
+                ResponseDT: '2023-01-11T04:45:45.0000000+00:00'
+                ResponseLapse: 11234
+                ViewLaps: 12345
+                InRespondedQueue: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - QuestionResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 2
+                QuestionVersion: 1
+                ParticipantQuestionText: Participant Question Text 2
+                ParticipantQuestionOrder: 1
+                LanguageID: 1
+                IsSkipped: 0
+                ResponseValue: Test Response 2
+                ResponseDT: '2023-01-11T04:47:45.0000000+00:00'
+                ResponseLapse: 11234
+                ViewLaps: 12345
+                InRespondedQueue: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /session-reminder-response:
+    post:
+      summary: Upload Session Reminder Response
+      description: This action will be used to upload Session Reminder Response
+      operationId: session-reminder-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;SessionReminderResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;ReminderInstanceSeqNum [int]<br>\n&nbsp;&nbsp;ScheduleDT [datetime]<br>\n&nbsp;&nbsp;IsResponded [bit]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - SessionReminderResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  ReminderInstanceSeqNum: 1
+                  ScheduleDT: '2023-01-15T04:45:45.0000000+00:00'
+                  IsResponded: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - SessionReminderResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  ReminderInstanceSeqNum: 2
+                  ScheduleDT: '2023-01-15T04:55:45.0000000+00:00'
+                  IsResponded: 0
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - SessionReminderResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                ReminderInstanceSeqNum: 1
+                ScheduleDT: '2023-01-15T04:45:45.0000000+00:00'
+                IsResponded: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - SessionReminderResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                ReminderInstanceSeqNum: 2
+                ScheduleDT: '2023-01-15T04:55:45.0000000+00:00'
+                IsResponded: 0
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /session-response:
+    post:
+      summary: Upload Session Response
+      description: This action will be used to upload Session Response
+      operationId: session-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;SessionResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceStartDT [datetime]<br>\n&nbsp;&nbsp;SessionResponseLapse [int]<br>\n&nbsp;&nbsp;SessionInstanceEndDT [datetime]<br>\n&nbsp;&nbsp;IsComplete [bit]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - SessionResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 1
+                  SessionInstanceStartDT: '2023-01-21T04:45:45.0000000+00:00'
+                  SessionResponseLapse: 5444
+                  SessionInstanceEndDT: '2023-01-21T04:45:45.0000000+00:00'
+                  IsComplete: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - SessionResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  SessionInstanceStartDT: '2023-01-21T05:45:45.0000000+00:00'
+                  SessionResponseLapse: 6784
+                  SessionInstanceEndDT: '2023-01-21T04:45:45.0000000+00:00'
+                  IsComplete: 1
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - SessionResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 1
+                SessionInstanceStartDT: '2023-01-21T04:45:45.0000000+00:00'
+                SessionResponseLapse: 5444
+                SessionInstanceEndDT: '2023-01-21T04:45:45.0000000+00:00'
+                IsComplete: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - SessionResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                SessionInstanceStartDT: '2023-01-21T05:45:45.0000000+00:00'
+                SessionResponseLapse: 6784
+                SessionInstanceEndDT: '2023-01-21T04:45:45.0000000+00:00'
+                IsComplete: 1
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /yoke-push-response:
+    post:
+      summary: Upload Yoke Push Response
+      description: This action will be used to upload Yoke Push Response
+      operationId: yoke-push-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/json:
+            schema:
+              type: string
+              properties:
+                file:
+                  type: string
+              description: "Response need to be in json format. Data types are as below<br>\n&nbsp;&nbsp;YokePushResponseID [bigint]<br>\n&nbsp;&nbsp;OrganizationID [bigint]<br>\n&nbsp;&nbsp;StudyID [bigint]<br>\n&nbsp;&nbsp;StudyVersion [int]<br>\n&nbsp;&nbsp;ParticipantID [bigint]<br>\n&nbsp;&nbsp;StudyDownloadCnt [int]<br>\n&nbsp;&nbsp;SessionID [bigint]<br>\n&nbsp;&nbsp;SessionScheduleID [bigint]<br>\n&nbsp;&nbsp;NotifInstanceSeqNum [int]<br>\n&nbsp;&nbsp;SessionInstanceSeqNum [int]<br>\n&nbsp;&nbsp;QuestionID [bigint]<br>\n&nbsp;&nbsp;QuestionVersion [int]<br>\n&nbsp;&nbsp;YokeParticipantID [bigint]<br>\n&nbsp;&nbsp;PushNotifSendDT [datetime]<br>\n&nbsp;&nbsp;PushNotifReceivedDT [datetime]<br>\n&nbsp;&nbsp;DataSendDT [datetime]\n"
+              example:
+                - YokePushResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 2
+                  QuestionVersion: 1
+                  YokeParticipantID: 1
+                  PushNotifSendDT: '2023-01-15T04:45:45.0000000+00:00'
+                  PushNotifReceivedDT: '2023-01-16T04:45:45.0000000+00:00'
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+                - YokePushResponseID: 1
+                  OrganizationID: 1
+                  StudyID: 1
+                  StudyVersion: 1
+                  ParticipantID: 1
+                  StudyDownloadCnt: 1
+                  SessionID: 1
+                  ScheduleID: 1
+                  NotifInstanceSeqNum: 1
+                  SessionInstanceSeqNum: 2
+                  QuestionID: 2
+                  QuestionVersion: 1
+                  YokeParticipantID: 1
+                  PushNotifSendDT: '2023-01-15T04:48:45.0000000+00:00'
+                  PushNotifReceivedDT: '2023-01-16T04:47:45.0000000+00:00'
+                  DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+            example:
+              - YokePushResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                SessionScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 2
+                QuestionVersion: 1
+                YokeParticipantID: 1
+                PushNotifSendDT: '2023-01-15T04:45:45.0000000+00:00'
+                PushNotifReceivedDT: '2023-01-16T04:45:45.0000000+00:00'
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+              - YokePushResponseID: 1
+                OrganizationID: 1
+                StudyID: 1
+                StudyVersion: 1
+                ParticipantID: 1
+                StudyDownloadCnt: 1
+                SessionID: 1
+                ScheduleID: 1
+                NotifInstanceSeqNum: 1
+                SessionInstanceSeqNum: 2
+                QuestionID: 2
+                QuestionVersion: 1
+                YokeParticipantID: 1
+                PushNotifSendDT: '2023-01-15T04:48:45.0000000+00:00'
+                PushNotifReceivedDT: '2023-01-16T04:47:45.0000000+00:00'
+                DataSendDT: '2023-01-21T04:45:45.0000000+00:00'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    QueueMessage:
+      required:
+        - MessageText
+      type: object
+      properties:
+        MessageText:
+          type: string
+          example: the stringified JSON will go here. Should be utf-8 encoded

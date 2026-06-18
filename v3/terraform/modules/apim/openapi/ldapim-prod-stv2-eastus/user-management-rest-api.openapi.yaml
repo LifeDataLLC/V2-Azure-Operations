@@ -1,0 +1,1590 @@
+openapi: 3.0.1
+info:
+  title: User Management REST API
+  description: This API allow customers to create users for their organization.
+  termsOfService: https://www.lifedatacorp.com/lifedata-terms-of-use/
+  contact:
+    name: Lifedata Corp
+    url: https://www.lifedatacorp.com/
+    email: info@lifedatacorp.com
+  license:
+    name: Lifedata license
+    url: https://www.lifedatacorp.com/license
+  version: '1.0'
+servers:
+  - url: https://api.lifedatacorp.com/user
+paths:
+  /organization/:
+    get:
+      tags:
+        - Organization
+      summary: User organization information
+      description: This API will return all user organization information
+      operationId: get-organization
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    UserID:
+                      type: integer
+                      description: User unique identifier
+                      example: 123
+                    Email:
+                      type: string
+                      description: User email address
+                      example: tim@lifedatacorp.com
+                    OrganizationID:
+                      type: integer
+                      description: Organization unique identifier
+                      example: 12
+                    OrgName:
+                      type: string
+                      description: Organization name
+                      example: LifeData LLC.
+                    Description:
+                      type: string
+                      description: Organization detail
+                      example: LifeData LLC.
+                    IsDefault:
+                      enum:
+                        - '0'
+                        - '1'
+                      type: boolean
+                      description: Indicates if this is the user's default organization
+                      example: '1'
+                    IsActive:
+                      enum:
+                        - '0'
+                        - '1'
+                      type: boolean
+                      description: Indicates if the user is active in this organization
+                      example: '1'
+                    InvitationID:
+                      type: integer
+                      description: Invitation unique identifier
+                      example: 321
+                    InvitedBy:
+                      type: string
+                      description: Email of the user who sent the invitation
+                      example: kevin@lifedatacorp.com
+                    InvitedFrom:
+                      type: string
+                      description: Organization name of the user who sent the invitation
+                      example: ASD Ltd.
+                    InvitedAs:
+                      type: string
+                      description: Role assigned to the invited user
+                      example: Researcher
+                    InvitationDT:
+                      type: string
+                      description: DateTime when invitation was sent
+                      example: '2026-01-15T10:11:12Z'
+                    AcceptationDT:
+                      type: string
+                      description: DateTime when invitation was accepted
+                      example: '2026-01-15T10:11:12Z'
+                    StatusType:
+                      enum:
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                      type: integer
+                      description: Invitation status type:<br> &nbsp;&nbsp;1 = Invited<br> &nbsp;&nbsp;2 = Invitation Canceled<br> &nbsp;&nbsp;3 = Accepted<br> &nbsp;&nbsp;4 = Deactivated<br> &nbsp;&nbsp;5 = Deleted
+                      example: 1
+              example:
+                - UserID: 123
+                  Email: tim@lifedatacorp.com
+                  OrganizationID: 12
+                  OrgName: LifeData LLC.
+                  Description: LifeData LLC.
+                  IsDefault: '1'
+                  IsActive: '1'
+                  InvitationID: 321
+                  InvitedBy: kevin@lifedatacorp.com
+                  InvitedFrom: ASD Ltd.
+                  InvitedAs: Researcher
+                  InvitationDT: '2026-01-15T10:11:12.0000000+00:00'
+                  AcceptationDT: '2026-01-15T10:11:12.0000000+00:00'
+                  StatusType: 1
+    put:
+      tags:
+        - Organization
+      summary: Update Organization
+      description: Update Organization
+      operationId: put-organization
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the Block information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                OrgName:
+                  type: string
+                  description: Name of the Organization
+                  example: LifeData LLC.
+                Description:
+                  type: string
+                  description: Description of the Organization
+                  example: LifeData LLC. is a USA based company.
+            example:
+              OrgName: LifeData LLC.
+              Description: LifeData LLC. is a USA based company.
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /user/create-user:
+    post:
+      tags:
+        - Web User
+      summary: Create new Web User for LifeData Web App
+      description: "This API will receive an Email Address in Request Body. \nThen It will check if the Email already exist in our Active Directory. \nIf it is found then it will return a 403 response. \nOtherwise it will create a new User in the Active Directory by calling Microsoft Graph api. \nOnce the user is created, it will run a Stored Procedure with the Email Address and create a new User Record in LifeData DB and return the UserID. \nThen the UserID will be added to the Active Directory user as an Directory Extension property. \nFinally it will return the UserID as the response of this API.\n"
+      operationId: post-user-create-user
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the User information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DisplayName:
+                  type: string
+                  example: John Doe
+                UserEmail:
+                  type: string
+                  example: john.doe@test.com
+                ProfilePictureFilePath:
+                  type: string
+                  description: File path to the customer's profile picture
+                  example: user-profile/123.png
+            example:
+              DisplayName: John Doe
+              UserEmail: john.doe@test.com
+              ProfilePictureFilePath: user-profile/123.png
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWeb'
+              example:
+                UserID: '1'
+  /user/createBaseAdmin:
+    post:
+      tags:
+        - Web User
+      summary: Create base organization admin B2C Web User for LifeData Web App
+      description: "This API will receive an Email Address in Request Body. \nThen It will check if the Email already exist in our Active Directory. \nIf it is found then it will return a 403 response. \nOtherwise it will create a new User in the Active Directory by calling Microsoft Graph api. \nOnce the user is created, it will run a Stored Procedure with the Email Address and create a new User Record in LifeData DB and return the UserID. \nThen the UserID will be added to the Active Directory user as an Directory Extension property. \nFinally it will return the UserID as the response of this API.\n"
+      operationId: post-user-createbaseadmin
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the User information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DisplayName:
+                  type: string
+                  example: John Doe
+                UserEmail:
+                  type: string
+                  example: john.doe@test.com
+                OrganizationName:
+                  type: string
+                  description: Name of the organization
+                  example: LifeData LLC.
+                ProfilePictureFilePath:
+                  type: string
+                  description: File path to the customer's profile picture
+                  example: user-profile/123.png
+            example:
+              DisplayName: John Doe
+              UserEmail: john.doe@test.com
+              OrganizationName: LifeData LLC.
+              ProfilePictureFilePath: user-profile/123.png
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: Object
+                properties:
+                  UserID:
+                    type: string
+                    example: '1'
+              examples:
+                default:
+                  value: 
+  /user/create-b2c-user:
+    post:
+      tags:
+        - Web User
+      summary: Create new B2C Web User for LifeData Web App
+      description: "This API will receive an Email Address in Request Body. \nThen It will check if the Email already exist in our Active Directory. \nIf it is found then it will return a 403 response. \nOtherwise it will create a new User in the Active Directory by calling Microsoft Graph api. \nOnce the user is created, it will run a Stored Procedure with the Email Address and create a new User Record in LifeData DB and return the UserID. \nThen the UserID will be added to the Active Directory user as an Directory Extension property. \nFinally it will return the UserID as the response of this API.\n"
+      operationId: post-user-create-b2c-user
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the User information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DisplayName:
+                  type: string
+                  example: John Doe
+                UserEmail:
+                  type: string
+                  example: john.doe@test.com
+                ProfilePictureFilePath:
+                  type: string
+                  description: File path to the customer's profile picture
+                  example: user-profile/123.png
+            example:
+              DisplayName: John Doe
+              UserEmail: john.doe@test.com
+              ProfilePictureFilePath: user-profile/123.png
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: Object
+                properties:
+                  UserID:
+                    type: string
+                    example: '1'
+              examples:
+                default:
+                  value: 
+  /user/getUserIDForLoggedInUser:
+    get:
+      tags:
+        - Web User
+      summary: Retrieve and return the UserID for the logged-in user.
+      description: "This API will first check if it has an Authorization Header.\nIf no Authorization Header is found it will return 403.\nIf it has an Authorization Header, it will read the provided Access Token segment in the Authorization Header.\nThen it will parse the Access Token and retrieve the OID(ObjectID) for the logged-in user.\nWith this ObjectID it will make a GET call to Microsoft Graph API to retrieve the User Detail.\nFrom the Response of the Graph API, it will read the Directory Extension that store the UserID of this logged-in person.\nFinally the UserID will be returned as response of this API.\n"
+      operationId: get-user-getuseridforloggedinuser
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWeb'
+              example:
+                UserID: '1'
+  /user/getUserDetails:
+    get:
+      tags:
+        - Web User
+      summary: Retrieve and return the User Details for the logged-in user.
+      description: "This API will first check if it has an Authorization Header.\nIf no Authorization Header is found it will return 403.\nIf it has an Authorization Header, it will read the provided Access Token segment in the Authorization Header.\nThen it will parse the Access Token and retrieve the OID(ObjectID) for the logged-in user.\nWith this ObjectID it will make a GET call to Microsoft Graph API to retrieve the User Detail.\nFrom the Response of the Graph API, it will read the Directory Extension that store the UserID, Email and Display Name of this logged-in person.\nFinally the 3 properties will be returned as response of this API.\n"
+      operationId: get-user-getuserdetails
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWebGetDetail'
+              example:
+                UserID: '1'
+                Email: testuser@test.com
+                DisplayName: John Doe
+                ProfilePictureFilePath: user-profile/123.png
+  /user/permissions:
+    get:
+      tags:
+        - Web User
+      summary: User role and permission related information
+      description: "This API will return an object. This object will contain UserRole, BasicPermissions, AllPermissions\n"
+      operationId: get-user-permissions
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  UserRole:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        RoleID:
+                          type: integer
+                          example: 1
+                  BasicPermissions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        RoleID:
+                          type: integer
+                          example: 1
+                        ObjectID:
+                          type: integer
+                          example: 1
+                        ActionID:
+                          type: integer
+                          example: 1
+                  AllPermissions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        RoleID:
+                          type: integer
+                          example: 1
+                        ObjectID:
+                          type: integer
+                          example: 1
+                        LifeDataObjectID:
+                          type: integer
+                          example: 1
+                        ActionID:
+                          type: integer
+                          example: 1
+              example:
+                UserRole:
+                  - RoleID: 1
+                BasicPermissions:
+                  - RoleID: 1
+                    ObjectID: 1
+                    ActionID: 1
+                AllPermissions:
+                  - RoleID: 1
+                    ObjectID: 1
+                    LifeDataObjectID: 1
+                    ActionID: 1
+  /user/getOrganizations:
+    get:
+      tags:
+        - Web User
+      summary: User organization information
+      description: This API will return all user organization information
+      operationId: get-user-getorganizations
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    UserID:
+                      type: integer
+                      description: User unique identifier
+                      example: 123
+                    Email:
+                      type: string
+                      description: User email address
+                      example: tim@lifedatacorp.com
+                    OrganizationID:
+                      type: integer
+                      description: Organization unique identifier
+                      example: 12
+                    OrgName:
+                      type: string
+                      description: Organization name
+                      example: LifeData LLC.
+                    IsDefault:
+                      enum:
+                        - '0'
+                        - '1'
+                      type: boolean
+                      description: Indicates if this is the user's default organization
+                      example: '1'
+                    IsActive:
+                      enum:
+                        - '0'
+                        - '1'
+                      type: boolean
+                      description: Indicates if the user is active in this organization
+                      example: '1'
+                    InvitationID:
+                      type: integer
+                      description: Invitation unique identifier
+                      example: 321
+                    InvitedBy:
+                      type: string
+                      description: Email of the user who sent the invitation
+                      example: kevin@lifedatacorp.com
+                    InvitedFrom:
+                      type: string
+                      description: Organization name of the user who sent the invitation
+                      example: ASD Ltd.
+                    InvitedAs:
+                      type: string
+                      description: Role assigned to the invited user
+                      example: Researcher
+                    InvitationDT:
+                      type: string
+                      description: DateTime when invitation was sent
+                      example: '2026-01-15T10:11:12Z'
+                    AcceptationDT:
+                      type: string
+                      description: DateTime when invitation was accepted
+                      example: '2026-01-15T10:11:12Z'
+                    StatusType:
+                      enum:
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                      type: integer
+                      description: Invitation status type:<br> &nbsp;&nbsp;1 = Invited<br> &nbsp;&nbsp;2 = Invitation Canceled<br> &nbsp;&nbsp;3 = Accepted<br> &nbsp;&nbsp;4 = Deactivated<br> &nbsp;&nbsp;5 = Deleted
+                      example: 1
+              example:
+                - UserID: 123
+                  Email: tim@lifedatacorp.com
+                  OrganizationID: 12
+                  OrgName: LifeData LLC.
+                  IsDefault: '1'
+                  IsActive: '1'
+                  InvitationID: 321
+                  InvitedBy: kevin@lifedatacorp.com
+                  InvitedFrom: ASD Ltd.
+                  InvitedAs: Researcher
+                  InvitationDT: '2026-01-15T10:11:12.0000000+00:00'
+                  AcceptationDT: '2026-01-15T10:11:12.0000000+00:00'
+                  StatusType: 1
+  /user/profile:
+    put:
+      tags:
+        - Web User
+      summary: Update user profile information
+      description: Update user profile information
+      operationId: put-user-profile
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the User Profile information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DisplayName:
+                  type: string
+                  example: Amalesh Debnath
+                Phone:
+                  type: string
+                  example: '+8801612625374'
+                ProfilePictureFilePath:
+                  type: string
+                  description: File path to the customer's profile picture
+                  example: user-profile/123.png
+            example:
+              DisplayName: Amalesh Debnath
+              Phone: '+8801612625374'
+              ProfilePictureFilePath: user-profile/123.png
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /user/address:
+    put:
+      tags:
+        - Web User
+      summary: Update user address
+      description: Update user address
+      operationId: put-user-address
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the User Address information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Country:
+                  type: string
+                  example: USA
+                State:
+                  type: string
+                  example: Indiana
+                City:
+                  type: string
+                  example: Marion
+                PostalCode:
+                  type: string
+                  example: '46952'
+                AddressLine1:
+                  type: string
+                  example: 1800 N
+                AddressLine2:
+                  type: string
+                  example: Wabash Rd
+                AddressLine3:
+                  type: string
+                  example: ''
+            example:
+              Country: USA
+              State: Indiana
+              City: Marion
+              PostalCode: '46952'
+              AddressLine1: 1800 N
+              AddressLine2: Wabash Rd
+              AddressLine3: ''
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /user/setDefaultOrganization:
+    put:
+      tags:
+        - Web User
+      summary: Update user default organization
+      description: Update user default organization
+      operationId: put-user-setdefaultorganization
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the Organization ID
+        content:
+          application/json:
+            schema:
+              properties:
+                OrganizationID:
+                  type: integer
+                  example: 1
+            example:
+              OrganizationID: 1
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /team/teamMembers:
+    get:
+      tags:
+        - Team Management
+      summary: Get all team members
+      description: "This API will return all team members with UserID, UserIdentity, RoleID, RoleName, IsActive, InvitationDT, AcceptationDT, StatusType\n"
+      operationId: get-team-teammembers
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    UserID:
+                      type: integer
+                      example: 1
+                    InvitationID:
+                      type: integer
+                      example: 1
+                    UserName:
+                      type: string
+                      example: Tim David
+                    EmailID:
+                      type: string
+                      example: asd@asd.com
+                    ProfilePictureFilePath:
+                      type: string
+                      description: File path to the customer's profile picture
+                      example: user-profile/123.png
+                    Phone:
+                      type: string
+                      description: Phone number of the team member
+                      example: '8801612625374'
+                    RoleID:
+                      enum:
+                        - 6
+                        - 7
+                        - 8
+                        - 9
+                        - 10
+                        - 11
+                      type: integer
+                      description: "&nbsp;&nbsp;6 = Organization Admin<br>\n&nbsp;&nbsp;7 = Researcher<br>\n&nbsp;&nbsp;8 = Manager<br>\n&nbsp;&nbsp;9 = Assistant<br>\n&nbsp;&nbsp;10 = Viewer<br>\n&nbsp;&nbsp;11 = Guest\n"
+                      example: 6
+                    RoleName:
+                      type: string
+                      example: Admin
+                    IsActive:
+                      enum:
+                        - '1'
+                        - '0'
+                      type: boolean
+                      example: '1'
+                    InvitationDT:
+                      type: string
+                      example: '2023-12-15T11:12:13Z'
+                    AcceptationDT:
+                      type: string
+                      example: '2023-12-16T11:12:13Z'
+                    StatusType:
+                      type: integer
+                      description: "&nbsp;&nbsp;1 = Invited<br>\n&nbsp;&nbsp;2 = Invitation Canceled<br>\n&nbsp;&nbsp;3 = Accepted<br>\n&nbsp;&nbsp;4 = Deactivated<br>\n&nbsp;&nbsp;5 = Deleted\n"
+                      example: 1
+              example:
+                - UserID: 1
+                  InvitationID: 1
+                  UserName: Tim David
+                  EmailID: asd@asd.com
+                  ProfilePictureFilePath: user-profile/123.png
+                  Phone: '8801612625374'
+                  RoleID: 6
+                  RoleName: Admin
+                  IsActive: '1'
+                  InvitationDT: '2023-12-15T11:12:13.0000000+00:00'
+                  AcceptationDT: '2023-12-16T11:12:13.0000000+00:00'
+                  StatusType: 1
+  /team/inviteTeamMember:
+    post:
+      tags:
+        - Team Management
+      summary: Invite a team member
+      description: "This API will return an object. This object will contain UserRole, BasicPermissions, AllPermissions\n"
+      operationId: post-team-inviteteammember
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing user's email id and role id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                UserName:
+                  type: string
+                  example: Tim David
+                UserEmail:
+                  type: string
+                  example: asd.@asd.com
+                RoleID:
+                  enum:
+                    - 6
+                    - 7
+                    - 8
+                    - 9
+                    - 10
+                    - 11
+                  type: integer
+                  description: "&nbsp;&nbsp;6 = Organization Admin<br>\n&nbsp;&nbsp;7 = Researcher<br>\n&nbsp;&nbsp;8 = Manager<br>\n&nbsp;&nbsp;9 = Assistant<br>\n&nbsp;&nbsp;10 = Viewer<br>\n&nbsp;&nbsp;11 = Guest\n"
+                  example: 6
+            example:
+              UserName: Tim David
+              UserEmail: asd.@asd.com
+              RoleID: 6
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  InviteID:
+                    type: integer
+                    example: 1
+              example:
+                InviteID: 1
+  /team/acceptInvitation:
+    put:
+      tags:
+        - Team Management
+      summary: Accept invite as a team member
+      description: Accept invite as a team member
+      operationId: put-team-acceptinvitation
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing invitation id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                InvitationID:
+                  type: integer
+                  example: 1
+            example:
+              InvitationID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  CanUpdate:
+                    type: integer
+                    example: 1
+              example:
+                CanUpdate: 1
+  /team/cancelInvitation:
+    put:
+      tags:
+        - Team Management
+      summary: Cancel invitation
+      description: Cancel invitation
+      operationId: put-team-cancelinvitation
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing invitation id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                InvitationID:
+                  type: integer
+                  example: 1
+            example:
+              InvitationID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  CanUpdate:
+                    type: integer
+                    example: 1
+              example:
+                CanUpdate: 1
+  /team/deactivate:
+    put:
+      tags:
+        - Team Management
+      summary: Deactivate a team member
+      description: Deactivate a team member
+      operationId: put-team-deactivate
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing team member user id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                TeamMemberID:
+                  type: integer
+                  example: 1
+            example:
+              TeamMemberID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  CanUpdate:
+                    type: integer
+                    description: Team member user id
+                    example: 1
+              example:
+                CanUpdate: 1
+  /team/activate:
+    put:
+      tags:
+        - Team Management
+      summary: Activate a team member
+      description: Activate a team member
+      operationId: put-team-activate
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing team member user id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                TeamMemberID:
+                  type: integer
+                  example: 1
+            example:
+              TeamMemberID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  CanUpdate:
+                    type: integer
+                    description: Team member user id
+                    example: 1
+              example:
+                CanUpdate: 1
+  '/team/studyAccess/{TeamMemberID}':
+    get:
+      tags:
+        - Team Management
+      summary: Team Member Study Access Detail
+      description: This API will return Team Member Study Access Detail
+      operationId: get-team-studyaccess-teammemberid
+      parameters:
+        - name: TeamMemberID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    StudyID:
+                      type: integer
+                      description: The study id
+                      example: 123
+                    StudyTitle:
+                      type: string
+                      description: The Study Title
+                      example: Welcome to LifeData
+                    ActionIDs:
+                      type: string
+                      description: Comma separated Action IDs
+                      example: '1,2,4,5'
+                    ActionTitles:
+                      type: string
+                      description: Comma separated Action Titles
+                      example: 'Add,Edit,View,Delete'
+                    OwnerEmail:
+                      type: string
+                      description: Email ID of the owner of the study
+                      example: publish@lifedatacorp.com
+                    OwnerID:
+                      type: integer
+                      description: User ID of the owner of the study
+                      example: 123
+              example:
+                - StudyID: 123
+                  StudyTitle: Welcome to LifeData
+                  ActionIDs: '1,2,4,5'
+                  ActionTitles: 'Add,Edit,View,Delete'
+                  OwnerEmail: publish@lifedatacorp.com
+                  OwnerID: 123
+  '/team/changeRole/{TeamMemberID}':
+    put:
+      tags:
+        - Team Management
+      summary: Change Role of a Team Member
+      description: This API will change role of a team member
+      operationId: put-team-changerole-teammemberid
+      parameters:
+        - name: TeamMemberID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing role id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                RoleID:
+                  enum:
+                    - 5
+                    - 6
+                    - 7
+                    - 8
+                    - 9
+                    - 10
+                    - 11
+                  type: integer
+                  description: "&nbsp;&nbsp;5 = Subscription Admin<br>\n&nbsp;&nbsp;6 = Organization Admin<br>\n&nbsp;&nbsp;7 = Researcher<br>\n&nbsp;&nbsp;8 = Manager<br>\n&nbsp;&nbsp;9 = Assistant<br>\n&nbsp;&nbsp;10 = Viewer<br>\n&nbsp;&nbsp;11 = Guest<br>\n"
+                  example: 7
+            example:
+              RoleID: 7
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ServerResponse:
+                    type: object
+                    properties:
+                      CanChange:
+                        enum:
+                          - '1'
+                          - '0'
+                        type: boolean
+                        example: '1'
+                  ServerError:
+                    type: object
+                    properties:
+                      ErrorCode:
+                        type: integer
+                        example: 1
+                      ErrorTitle:
+                        type: string
+                        example: Invalid Request
+                      ErrorMessage:
+                        type: string
+                        example: Invalid Request!
+              example:
+                ServerResponse:
+                  CanChange: '1'
+                ServerError:
+                  ErrorCode: 1
+                  ErrorTitle: Invalid Request
+                  ErrorMessage: Invalid Request!
+  /participant/anonymous:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Create new Anonymous Participant for LifeData Mobile App
+      description: "This API will first run a Stored Procedure and create the Anonymous user in LifeData Service. \nThe Stored Procedure will return the UserEmail and ParticipantID.\nThen it will generate a password for the user and using Graph API create a user in Active Directory.\nThe UserEmail and the generated Password will be used in creation of that UserID.\nOnce the user is created. It will then run another update user call using Microsoft Graph API.\nThis time, the ParticipantID will be added to the Active Directory User record as a Directory Extension Property.\nFinally the UserEmail, Password and ParticipantID will be returned as the response of this API.\n"
+      operationId: post-participant-anonymous
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Empty Request Body
+        content:
+          application/json:
+            schema:
+              type: object
+              nullable: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponseModel'
+              example:
+                UserEmail: john.doe@test.com
+                Password: d3j4v4@f5ff8
+                ParticipantID: '1'
+  /participant/changePassword:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Change Participant Password
+      description: API to change the password of a mobile participant.
+      operationId: post-participant-changepassword
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the participant email and new password information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                UserEmail:
+                  type: string
+                  description: Participant email ID
+                  example: tanvir@lifedatacorp.com
+                NewPassword:
+                  type: string
+                  description: New password to be set for the participant
+                  example: qweQWE456@@
+            example:
+              UserEmail: tanvir@lifedatacorp.com
+              NewPassword: qweQWE456@@
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResponse'
+              example:
+                PasswordChanged: '1'
+  /participant/forgotPassword:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Forgot Password
+      description: API to reset the password of a mobile participant.
+      operationId: post-participant-forgotpassword
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the participant email
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                UserEmail:
+                  type: string
+                  description: Participant email ID
+                  example: tanvir@lifedatacorp.com
+            example:
+              UserEmail: tanvir@lifedatacorp.com
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResponse'
+              example:
+                PasswordChanged: '1'
+  /participant/delete:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Delete Participant for LifeData Mobile App
+      description: "This API will 1st Delete the user from lifedata DB and on error - Early exit\non success - call AD B2C API and delete user\non error - handle error\non success - return final.\n"
+      operationId: post-participant-delete
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the participant id with
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ParticipantID:
+                  type: integer
+                  example: 1
+            example:
+              ParticipantID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponseModel'
+              example:
+                UserEmail: john.doe@test.com
+                Password: d3j4v4@f5ff8
+                ParticipantID: '1'
+  /participant/regular:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Create new Regular Participant for LifeData Mobile App
+      description: "This API will receive an UserEmail and Password in Request Body. \nThen It will check if the Email already exist in our Active Directory. \nIf it is found then it will return a 403 response. \nOtherwise it will create a new User in the Active Directory by calling Microsoft Graph api. \nOnce the user is created, it will run a Stored Procedure with the Email Address and create a new Registered Participant in LifeData DB and return the ParticipantID. \nThen the ParticipantID will be added to the Active Directory user as an Directory Extension property. \nFinally the UserEmail, Password and ParticipantID will be returned as the response of this API.\n"
+      operationId: post-participant-regular
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON object containing the Email Address and password
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                UserEmail:
+                  type: string
+                  example: john.doe@test.com
+                Password:
+                  type: string
+                  example: d3j4v4@f5ff8
+            example:
+              UserEmail: john.doe@test.com
+              Password: d3j4v4@f5ff8
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponseModel'
+              example:
+                UserEmail: john.doe@test.com
+                Password: d3j4v4@f5ff8
+                ParticipantID: '1'
+  /participant/ownStudy:
+    get:
+      tags:
+        - Resource (Unique Participant)
+      summary: Get all study information owned by a team member
+      description: This API will return all study information owned by a team member
+      operationId: get-participant-ownstudy
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing team member user id
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                TeamMemberID:
+                  type: integer
+                  example: 1
+            example:
+              TeamMemberID: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    StudyID:
+                      type: integer
+                      example: 1
+                    StudyTitle:
+                      type: string
+                      example: Tim David
+                    AllocatedParticipantCount:
+                      type: integer
+                      example: 50
+                    Used:
+                      type: integer
+                      example: 6
+              example:
+                - StudyID: 1
+                  StudyTitle: Tim David
+                  AllocatedParticipantCount: 50
+                  Used: 6
+  /resource/reallocate:
+    put:
+      tags:
+        - Resource (Unique Participant)
+      summary: Reallocate new participant to a study
+      description: Reallocate new participant to a study
+      operationId: put-resource-reallocate
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the resource information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                StudyID:
+                  type: integer
+                  example: 1
+                NumberOfUniqueParticipant:
+                  type: integer
+                  example: 10
+            example:
+              StudyID: 1
+              NumberOfUniqueParticipant: 10
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /resource/allocate:
+    put:
+      tags:
+        - Resource (Unique Participant)
+      summary: Allocate new participant to a study
+      description: Allocate new participant to a study
+      operationId: put-resource-allocate
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the resource information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                StudyID:
+                  type: integer
+                  example: 1
+                NumberOfUniqueParticipant:
+                  type: integer
+                  example: 10
+            example:
+              StudyID: 1
+              NumberOfUniqueParticipant: 10
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /resource/request:
+    post:
+      tags:
+        - Resource
+      summary: Request Resources
+      description: This API will send email to LifeData sales team about the request
+      operationId: post-resource-request
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing requested resource information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                RequestDetail:
+                  type: array
+                  items:
+                    unrecognizedKeywords:
+                      unrecognizedKeywords:
+                        Type:
+                          type: integer
+                          example: '1'
+                          description: resource type
+                        Amount:
+                          type: integer
+                          example: '1'
+                          description: requested amount
+            example:
+              RequestDetail:
+                - { }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /resource/allStudyResource:
+    get:
+      tags:
+        - Resource
+      summary: Get Resource Detail for all study
+      description: This api will return all the resources information for all the study under the organization
+      operationId: get-resource-allstudyresource
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    StudyID:
+                      type: integer
+                      description: This is the study id
+                      example: 123
+                    StudyTitle:
+                      type: string
+                      description: This is the study title
+                      example: Welcome to LifeData
+                    AllocatedParticipantCount:
+                      type: integer
+                      description: This is the number of allocation of unique participant
+                      example: 50
+                    RemainingParticipantCount:
+                      type: integer
+                      description: This is the number of remaining allocation of unique participant
+                      example: 20
+                    PublishedBy:
+                      type: string
+                      description: Study publisher email id
+                      example: publish@lifedatacorp.com
+              example:
+                - StudyID: 123
+                  StudyTitle: Welcome to LifeData
+                  AllocatedParticipantCount: 50
+                  RemainingParticipantCount: 20
+                  PublishedBy: publish@lifedatacorp.com
+  /resource/:
+    get:
+      tags:
+        - Resource
+      summary: Get Resource Detail
+      description: This api will return all the resources information
+      operationId: get-resource
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    ResourceType:
+                      enum:
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 6
+                        - 7
+                        - 8
+                        - 9
+                        - 25
+                        - 26
+                      type: integer
+                      description: "&nbsp;&nbsp;1 = Organization Admin Seat<br>\n&nbsp;&nbsp;2 = Researcher Seat<br>\n&nbsp;&nbsp;3 = Assistant Seat<br>\n&nbsp;&nbsp;4 = Viewer Seat<br>\n&nbsp;&nbsp;6 = Participant<br>\n&nbsp;&nbsp;7 = Number of Sub-Organization<br>\n&nbsp;&nbsp;8 = Number of Published Studies<br>\n&nbsp;&nbsp;9 = Number of Connected Devices<br>\n&nbsp;&nbsp;25 = Guest<br>\n&nbsp;&nbsp;26 = Subscription Admin Seat\n"
+                      example: 6
+                    AvailableResourceCount:
+                      type: integer
+                      description: Available Resource Count
+                      example: 100
+                    RemainingResourceCount:
+                      type: integer
+                      description: Remaining Resource Count
+                      example: 50
+              example:
+                - ResourceType: 6
+                  AvailableResourceCount: 100
+                  RemainingResourceCount: 50
+components:
+  schemas:
+    UserWeb:
+      type: object
+      properties:
+        UserID:
+          type: string
+          example: '1'
+    UserWebGetDetail:
+      type: object
+      properties:
+        UserID:
+          type: string
+          example: '1'
+        Email:
+          type: string
+          example: testuser@test.com
+        DisplayName:
+          type: string
+          example: John Doe
+        ProfilePictureFilePath:
+          type: string
+          description: File path to the customer's profile picture
+          example: user-profile/123.png
+    ParticipantResponseModel:
+      type: object
+      properties:
+        UserEmail:
+          type: string
+          example: john.doe@test.com
+        Password:
+          type: string
+          example: d3j4v4@f5ff8
+        ParticipantID:
+          type: string
+          example: '1'
+    PasswordResponse:
+      type: object
+      properties:
+        PasswordChanged:
+          enum:
+            - '1'
+            - '0'
+          type: boolean
+          example: '1'
+tags:
+  - name: Web User
+    description: API related to web user
+  - name: Mobile Participant
+    description: API related to mobile participant
+  - name: Team Management
+    description: API related to team management

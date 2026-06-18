@@ -498,8 +498,100 @@ variable "function_app_maps" {
 # § apim module variables (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- apim posture vars (Plan 03-07) ---
-# (Module plan 03-07 adds APIM SKU/instance/child config variables here)
+# --- apim posture vars (Plan 03-08) ---
+# D-307: NO `default` on connectivity-critical / posture / divergence variables.
+# D-309: Full child clone requires per-instance maps (apis, products, named_values,
+#        subscriptions, policy_fragments). These are set per-scope in tfvars.
+# D-310: Both scopes authored — nonprod has 2 instances, prod has 3.
+# T-03-27: Named values with secret=true authored with no value literal.
+# T-03-29: Policy fragments (B2C JWT + CORS) cloned verbatim from live acquisition.
+# Evidence: data/apim_services.json, data/apim_full/<instance>/*
+
+variable "apim_instances" {
+  description = <<-EOT
+    Map of APIM instances to create in this scope. Key = instance name.
+    Each entry carries all service-level and child-graph config for one APIM instance.
+    D-307: NO DEFAULT — per-instance config (SKU, vnet, children) is posture-critical.
+    D-310: ALL instances in scope authored (2 nonprod, 3 prod).
+    D-310: prod.tfvars has 3 instances even though prod scope is idle in M1 (authored ≠ applied).
+    Evidence: data/apim_services.json + data/apim_full/<instance>/*.json
+  EOT
+  type = map(object({
+    # Service-level
+    apim_name            = string
+    apim_publisher_name  = string
+    apim_publisher_email = string
+    apim_sku_name        = string # D-307 NO DEFAULT; Developer_1 or StandardV2_1
+    apim_vnet_type       = string # D-307: Internal | External | None
+    apim_subnet_key      = string # networking output key (apim, apim_stv2_outbound, or "" for None)
+
+    # Service-level policy XML path (relative to modules/apim/)
+    apim_service_policy_xml_path = string
+
+    # Hostname configs (empty lists = no custom hostnames)
+    apim_hostname_configurations = optional(object({
+      proxy            = optional(list(object({ host_name = string, key_vault_id = optional(string), default_ssl_binding = optional(bool, false), negotiate_client_certificate = optional(bool, false) })), [])
+      management       = optional(list(object({ host_name = string, key_vault_id = optional(string) })), [])
+      portal           = optional(list(object({ host_name = string, key_vault_id = optional(string) })), [])
+      developer_portal = optional(list(object({ host_name = string, key_vault_id = optional(string) })), [])
+    }), { proxy = [], management = [], portal = [], developer_portal = [] })
+
+    # AAD identity provider (prod only)
+    apim_aad_identity_provider_enabled = optional(bool, false)
+    apim_aad_client_id                 = optional(string, "")
+    apim_aad_allowed_tenants           = optional(list(string), [])
+
+    # Child graph (D-309 — full clone)
+    apim_apis = map(object({
+      display_name          = string
+      path                  = string
+      service_url           = optional(string, "")
+      subscription_required = optional(bool, false)
+      openapi_path          = string
+      policy_xml_path       = optional(string, "")
+    }))
+    apim_products = map(object({
+      display_name          = string
+      description           = optional(string, "")
+      state                 = optional(string, "published")
+      subscription_required = optional(bool, false)
+      subscriptions_limit   = optional(number, null)
+      approval_required     = optional(bool, null)
+      api_names             = list(string)
+    }))
+    apim_named_values = map(object({
+      display_name = string
+      secret       = optional(bool, false)
+      value        = optional(string, null)
+    }))
+    apim_subscriptions = map(object({
+      display_name  = optional(string, null)
+      product_name  = optional(string, null)
+      allow_tracing = optional(bool, false)
+      state         = optional(string, "active")
+    }))
+    apim_policy_fragments = map(object({
+      description = optional(string, "")
+      value       = string
+    }))
+  }))
+  # NO DEFAULT — all 5 instances (per scope) explicitly set in tfvars with evidence
+}
+
+# Networking output key for APIM StV2 outbound subnet (prod scope only)
+# Passed to module.networking.subnet_ids[var.apim_stv2_subnet_key] for External-VNet instances.
+# Evidence: vnets.json prod subnets ldapim-prod-stv2-eastus-outbound-subnet (10.0.15.0/24)
+variable "apim_stv2_subnet_key" {
+  description = <<-EOT
+    Subnet key for the APIM StandardV2 external VNet integration (prod scope only).
+    Maps to a key in var.networking.subnets. prod: "apim_stv2_outbound".
+    Set to "" on nonprod scope (no StV2 instance).
+    Evidence: vnets.json prod subnets ldapim-prod-stv2-eastus-outbound-subnet.
+  EOT
+  type        = string
+  default     = ""
+}
+
 # --- end apim posture vars ---
 
 # ---------------------------------------------------------------------------

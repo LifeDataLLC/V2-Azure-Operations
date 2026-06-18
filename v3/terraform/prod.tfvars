@@ -811,8 +811,874 @@ function_app_maps = {
 # § apim values (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- apim values (Plan 03-07) ---
-# (Plan 03-07 adds APIM instance name/SKU values here; prod has Developer + StandardV2 mid-migration)
+# --- apim values (Plan 03-08) ---
+# D-310: Prod scope has 3 instances: apim-staging-eastus + ldapim-prod-eastus + ldapim-prod-stv2-eastus.
+# D-307: apim_sku_name and apim_vnet_type are NO DEFAULT — set here with evidence.
+# T-03-30: Mid-migration pair (Developer + StandardV2) preserved as authored; M4 consolidates.
+# D-309: Full child clone — all child resources authored 1:1 from live acquisition.
+# T-03-27: All prod named values are secret=true — no literals authored.
+# T-03-29: Policy fragments cloned verbatim — positive auth posture preserved.
+# Evidence: data/apim_full/INVENTORY.md, data/apim_services.json, data/apim_full/<instance>/*.json
+
+apim_stv2_subnet_key = "apim_stv2_outbound" # ldapim-prod-stv2-eastus uses this subnet for VNet integration
+
+apim_instances = {
+  # ---------------------------------------------------------------------------
+  # Instance 1: apim-staging-eastus
+  # Evidence: apim_services.json name=apim-staging-eastus
+  #           SKU=Developer_1, VNet=Internal, apim-production-eastus-subnet
+  #           data/apim_full/apim-staging-eastus/
+  # ---------------------------------------------------------------------------
+  "apim-staging-eastus" = {
+    apim_name            = "apim-staging-eastus"
+    apim_publisher_name  = "LifeData LLC."
+    apim_publisher_email = "amalesh.debnath@gmail.com"
+    apim_sku_name        = "Developer_1" # evidence: apim_services.json
+    apim_vnet_type       = "Internal"    # evidence: apim_services.json virtualNetworkType=Internal
+    apim_subnet_key      = "apim"        # apim-production-eastus-subnet (10.0.3.0/24)
+
+    apim_service_policy_xml_path = "policies/apim-staging-eastus/service.policy.xml"
+
+    # No custom hostname configurations for staging
+    apim_hostname_configurations = {
+      proxy            = []
+      management       = []
+      portal           = []
+      developer_portal = []
+    }
+
+    apim_aad_identity_provider_enabled = false
+    apim_aad_client_id                 = ""
+    apim_aad_allowed_tenants           = []
+
+    # --- APIs (9 total — evidence: data/apim_full/apim-staging-eastus/apis.json) ---
+    apim_apis = {
+      "blob-storage-rest-api" = {
+        display_name          = "Blob Storage REST API"
+        path                  = "blob-service"
+        service_url           = "https://ststagingeastus.blob.core.windows.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/blob-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/blob-storage-rest-api.policy.xml"
+      }
+      "data-access-rest-api" = {
+        display_name          = "Data Access REST API"
+        path                  = "data-access"
+        service_url           = "https://data-access-staging-eastus-gcg4cbcbhqd8e8dd.eastus-01.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/data-access-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/data-access-rest-api.policy.xml"
+      }
+      "mobile-notifications-rest-api" = {
+        display_name          = "Mobile Notifications REST API"
+        path                  = "mobile-notification-service"
+        service_url           = "https://mobile-backend-staging-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/mobile-notifications-rest-api.openapi.yaml"
+        policy_xml_path       = ""
+      }
+      "mobile-participant-rest-api" = {
+        display_name          = "Mobile Participant REST API"
+        path                  = "mobile-participant-service"
+        service_url           = "https://mobile-backend-staging-eastus.azurewebsites.net"
+        subscription_required = true
+        openapi_path          = "openapi/apim-staging-eastus/mobile-participant-rest-api.openapi.yaml"
+        policy_xml_path       = ""
+      }
+      "mobile-response-rest-api" = {
+        display_name          = "Mobile Response REST API"
+        path                  = "mobile-response"
+        service_url           = "https://ststagingeastus.queue.core.windows.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/mobile-response-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/mobile-response-rest-api.policy.xml"
+      }
+      "mobile-study-rest-api" = {
+        display_name          = "Mobile Study REST API"
+        path                  = "mobile-study-service"
+        service_url           = "https://mobile-backend-staging-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/mobile-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/mobile-study-rest-api.policy.xml"
+      }
+      "queue-storage-rest-api" = {
+        display_name          = "Queue Storage REST API"
+        path                  = "queue-service"
+        service_url           = "https://ststagingeastus.queue.core.windows.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/queue-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/queue-storage-rest-api.policy.xml"
+      }
+      "user-management-rest-api" = {
+        display_name          = "User Management REST API"
+        path                  = "user"
+        service_url           = "https://user-module-staging-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/user-management-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/user-management-rest-api.policy.xml"
+      }
+      "web-study-rest-api" = {
+        display_name          = "Web Study REST API"
+        path                  = "web"
+        service_url           = "https://study-module-staging-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/apim-staging-eastus/web-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/apim-staging-eastus/web-study-rest-api.policy.xml"
+      }
+    }
+
+    # --- Products (7 total — evidence: data/apim_full/apim-staging-eastus/products.json) ---
+    apim_products = {
+      "data-api" = {
+        display_name          = "Data API"
+        description           = "This collection will contain all the APIs related to Data access and management"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["data-access-rest-api"]
+      }
+      "mobile-api" = {
+        display_name          = "Mobile API"
+        description           = "This collection contains all the APIs required by our mobile applications"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["mobile-notifications-rest-api", "mobile-participant-rest-api", "mobile-response-rest-api", "mobile-study-rest-api"]
+      }
+      "starter" = {
+        display_name          = "Starter"
+        description           = "Subscribers will be able to run 5 calls/minute up to a maximum of 100 calls/week."
+        state                 = "published"
+        subscription_required = true
+        subscriptions_limit   = 1
+        approval_required     = false
+        api_names             = []
+      }
+      "storage-api" = {
+        display_name          = "Storage API"
+        description           = "This collection contains all the APIs required for Storage related functionalities"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["blob-storage-rest-api", "queue-storage-rest-api"]
+      }
+      "unlimited" = {
+        display_name          = "Unlimited"
+        description           = "Subscribers have completely unlimited access to the API. Administrator approval is required."
+        state                 = "published"
+        subscription_required = true
+        subscriptions_limit   = 1
+        approval_required     = true
+        api_names             = []
+      }
+      "user-management-api" = {
+        display_name          = "User Management API"
+        description           = "This API allow customers to create users for their organization."
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["user-management-rest-api"]
+      }
+      "web-api" = {
+        display_name          = "Web API"
+        description           = "This collection is consiste of API required by the Front End Web Application"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["web-study-rest-api"]
+      }
+    }
+
+    # --- Named Values (17 total — evidence: data/apim_full/apim-staging-eastus/named_values.json) ---
+    # T-03-27: All staging named values are secret=true EXCEPT minimum-android/ios-app-version.
+    # Logger-Credentials system NV authored as secret with internal ID name.
+    # storage-account-name is secret=true in staging (vs dev which was "storage-account-name-dev").
+    apim_named_values = {
+      "app-reg-client-id-for-apim-to-mobile-app" = {
+        display_name = "app-reg-client-id-for-apim-to-mobile-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-apim-to-web-app" = {
+        display_name = "app-reg-client-id-for-apim-to-web-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-mobile-android-app" = {
+        display_name = "app-reg-client-id-for-mobile-android-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-mobile-ios-app" = {
+        display_name = "app-reg-client-id-for-mobile-ios-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-mobile-ropc-app" = {
+        display_name = "app-reg-client-id-for-mobile-ropc-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-apim" = {
+        display_name = "app-reg-client-id-for-web-apim"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-app" = {
+        display_name = "app-reg-client-id-for-web-app"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-mobile-ropc-user" = {
+        display_name = "b2c-login-issuer-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-mobile-user" = {
+        display_name = "b2c-login-issuer-for-mobile-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-web-user" = {
+        display_name = "b2c-login-issuer-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-mobile-ropc-user" = {
+        display_name = "b2c-well-known-config-url-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-mobile-user" = {
+        display_name = "b2c-well-known-config-url-for-mobile-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-web-user" = {
+        display_name = "b2c-well-known-config-url-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "65c12faf4634610310b0f7dd" = {
+        display_name = "Logger-Credentials--65c12faf4634610310b0f7de" # evidence: named_values.json displayName
+        secret       = true
+        value        = null
+      }
+      "minimum-android-app-version" = {
+        display_name = "minimum-android-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "minimum-ios-app-version" = {
+        display_name = "minimum-ios-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "storage-account-name" = {
+        display_name = "storage-account-name"
+        secret       = true
+        value        = null
+      }
+    }
+
+    # --- Subscriptions (7 non-master — evidence: data/apim_full/apim-staging-eastus/subscriptions.json) ---
+    apim_subscriptions = {
+      "65c126d7f0896f005b070001" = { product_name = "starter", state = "active" }
+      "65c126d7f0896f005b070002" = { product_name = "unlimited", state = "active" }
+      "65c6366e01234e1df02f8a6e" = { product_name = "data-api", state = "active" }
+      "65c636974634611a649e94a0" = { product_name = "mobile-api", state = "active" }
+      "65c636b601234e1df02f8a71" = { product_name = "storage-api", state = "active" }
+      "65c636f201234e1df02f8a74" = { product_name = "web-api", state = "active" }
+      "671ca3acb949c311ac1401b0" = { product_name = "user-management-api", state = "active" }
+    }
+
+    # --- Policy Fragments (10 total — evidence: data/apim_full/apim-staging-eastus/policy_fragments.json) ---
+    # T-03-29: Cloned verbatim. Staging uses {{storage-account-name}} (not -dev).
+    # CORSPolicy references app-staging.lifedatacorp.com origins.
+    apim_policy_fragments = {
+      "BlobStorageCacheLookupPolicy" = {
+        description = "This will be used in inbound policy of Blob Storage Put Action"
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-lookup vary-by-developer=\"false\" vary-by-developer-groups=\"false\" must-revalidate=\"true\" downstream-caching-type=\"public\">\r\n\t\t<vary-by-header>Accept</vary-by-header>\r\n\t\t<vary-by-header>Accept-Charset</vary-by-header>\r\n\t\t<vary-by-header>Authorization</vary-by-header>\r\n\t\t<vary-by-header>Container</vary-by-header>\r\n\t\t<vary-by-header>Blob</vary-by-header>\r\n\t</cache-lookup>\r\n</fragment>"
+      }
+      "BlobStorageCacheStorePolicy" = {
+        description = "This need to be added to the outbound policy of Blob Storage Put Action"
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-store duration=\"@{&#xA;        var header = context.Response.Headers.GetValueOrDefault(&quot;Cache-Control&quot;,&quot;&quot;);&#xA;        var maxAge = Regex.Match(header, @&quot;max-age=(?&lt;maxAge&gt;\\d+)&quot;).Groups[&quot;maxAge&quot;]?.Value;&#xA;        return (!string.IsNullOrEmpty(maxAge))?int.Parse(maxAge):300;&#xA;    }\" />\r\n</fragment>"
+      }
+      "BlobStorageGetPolicy" = {
+        description = "This will be used as inbound policy when trying to Get files from Blob Storage"
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;    }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "BlobStoragePutPolicy" = {
+        description = "Will be used as inbound policy in Blob Storage creation/edit calls"
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-blob-type\" exists-action=\"override\">\r\n\t\t<value>@{string blobType = \"BlockBlob\"; return blobType;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;&#x9;}\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "CORSPolicy" = {
+        description = "Cors policy for our APIS. should be applied on the global scope of the APIM"
+        value       = "<fragment>\r\n\t<cors allow-credentials=\"true\">\r\n\t\t<allowed-origins>\r\n\t\t\t<origin>https://app-staging.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apiportal-staging.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apimgmt-staging.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://app-staging.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apiportal-staging.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apimgmt-staging.lifedatacorp.com/</origin>\r\n\t\t\t<origin>http://localhost:5173/</origin>\r\n\t\t\t<origin>http://localhost:4173/</origin>\r\n\t\t</allowed-origins>\r\n\t\t<allowed-methods preflight-result-max-age=\"300\">\r\n\t\t\t<method>*</method>\r\n\t\t</allowed-methods>\r\n\t\t<allowed-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</allowed-headers>\r\n\t\t<expose-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</expose-headers>\r\n\t</cors>\r\n</fragment>"
+      }
+      "MobileAccessTokenValidatePolicy" = {
+        description = "Mobile Applications will make request with mobile users access token. This code will handle the AD B2C jwt token validation."
+        value       = "<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Mobile Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-mobile-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-ios-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-android-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-ropc-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-mobile-app}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-mobile-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+      "MobileROPCAccessTokenValidatePolicy" = {
+        description = "Anonymous from mobile application will make request with this type of access token"
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. ROPC Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-mobile-ropc-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-ropc-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-mobile-app}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-mobile-ropc-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+      "QueueServicePolicy" = {
+        description = "This will be needed when APIM will make call to the Queue Service"
+        value       = "<fragment>\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-date\" exists-action=\"override\">\r\n\t\t<value>@{string utcTime = System.DateTime.UtcNow.ToString(\"dddd, dd-MMM-y HH:mm:ss 'GMT'\"); return utcTime;}</value>\r\n\t</set-header>\r\n\t<set-variable name=\"RequestIdentifierToken\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;RequestIdentifierToken&quot;))\" />\r\n\t<set-variable name=\"QueueName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;QueueName&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-backend-service base-url=\"@{&#xA;&#x9;&#x9;string queueName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;QueueName&quot;);&#xA;&#x9;&#x9;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;&#x9;&#x9;return String.Format(&quot;https://{0}.queue.core.windows.net/{1}/messages&quot;, storageAccountName, queueName);     &#xA;  }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n</fragment>"
+      }
+      "TaskInboundPolicy" = {
+        description = "The conditional Authentication for the shared API between mobile and web app"
+        value       = "<fragment>\r\n\t<set-variable name=\"userDeviceType\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;x-user-device-type&quot;))\" />\r\n\t<choose>\r\n\t\t<when condition=\"@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;userDeviceType&quot;) == &quot;Mobile&quot;)\">\r\n\t\t\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Mobile Access token is missing or invalid.\">\r\n\t\t\t\t<openid-config url=\"{{b2c-well-known-config-url-for-mobile-user}}\" />\r\n\t\t\t\t<audiences>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-mobile-ios-app}}</audience>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-mobile-android-app}}</audience>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-mobile-ropc-app}}</audience>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-apim-to-mobile-app}}</audience>\r\n\t\t\t\t</audiences>\r\n\t\t\t\t<issuers>\r\n\t\t\t\t\t<issuer>{{b2c-login-issuer-for-mobile-user}}</issuer>\r\n\t\t\t\t</issuers>\r\n\t\t\t</validate-jwt>\r\n\t\t</when>\r\n\t\t<otherwise>\r\n\t\t\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Web Access token is missing or invalid.\">\r\n\t\t\t\t<openid-config url=\"{{b2c-well-known-config-url-for-web-user}}\" />\r\n\t\t\t\t<audiences>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-web-app}}</audience>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-web-apim}}</audience>\r\n\t\t\t\t\t<audience>{{app-reg-client-id-for-apim-to-web-app}}</audience>\r\n\t\t\t\t</audiences>\r\n\t\t\t\t<issuers>\r\n\t\t\t\t\t<issuer>{{b2c-login-issuer-for-web-user}}</issuer>\r\n\t\t\t\t</issuers>\r\n\t\t\t</validate-jwt>\r\n\t\t</otherwise>\r\n\t</choose>\r\n</fragment>"
+      }
+      "WebAccessTokenValidatePolicy" = {
+        description = "Web Applications will make request with web users access token. This code will handle the AD B2C jwt token validation."
+        value       = "<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Web Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-web-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-apim}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-web-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Instance 2: ldapim-prod-eastus
+  # Evidence: apim_services.json name=ldapim-prod-eastus
+  #           SKU=Developer_1, VNet=None, no subnet
+  #           data/apim_full/ldapim-prod-eastus/
+  # T-03-30: Mid-migration — old Developer SKU prod instance, no VNet integration.
+  #          Traffic migrating to ldapim-prod-stv2-eastus (StandardV2). Both authored (D-310).
+  # ---------------------------------------------------------------------------
+  "ldapim-prod-eastus" = {
+    apim_name            = "ldapim-prod-eastus"
+    apim_publisher_name  = "LifeData LLC."
+    apim_publisher_email = "amalesh.debnath@gmail.com"
+    apim_sku_name        = "Developer_1" # evidence: apim_services.json
+    apim_vnet_type       = "None"        # evidence: apim_services.json virtualNetworkType=None (no VNet integration)
+    apim_subnet_key      = ""            # no subnet — vnet_type=None
+
+    apim_service_policy_xml_path = "policies/ldapim-prod-eastus/service.policy.xml"
+
+    apim_hostname_configurations = {
+      proxy            = []
+      management       = []
+      portal           = []
+      developer_portal = []
+    }
+
+    apim_aad_identity_provider_enabled = false
+    apim_aad_client_id                 = ""
+    apim_aad_allowed_tenants           = []
+
+    # --- APIs (8 total — evidence: data/apim_full/ldapim-prod-eastus/apis.json) ---
+    # No mobile-notifications (8 not 9)
+    apim_apis = {
+      "blob-storage-rest-api" = {
+        display_name          = "Blob Storage REST API"
+        path                  = "blob-service"
+        service_url           = "https://stldprodeastus2.blob.core.windows.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-eastus/blob-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/blob-storage-rest-api.policy.xml"
+      }
+      "data-access-rest-api" = {
+        display_name          = "Data Access REST API"
+        path                  = "data-access"
+        service_url           = "https://data-access-prod-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-eastus/data-access-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/data-access-rest-api.policy.xml"
+      }
+      "mobile-participant-rest-api" = {
+        display_name          = "Mobile Participant REST API"
+        path                  = "mobile-participant-service"
+        service_url           = "https://mobile-backend-prod-eastus.azurewebsites.net/"
+        subscription_required = true
+        openapi_path          = "openapi/ldapim-prod-eastus/mobile-participant-rest-api.openapi.yaml"
+        policy_xml_path       = ""
+      }
+      "mobile-response-rest-api" = {
+        display_name          = "Mobile Response REST API"
+        path                  = "mobile-response"
+        service_url           = "https://stprodeastus.queue.core.windows.net/"
+        subscription_required = true
+        openapi_path          = "openapi/ldapim-prod-eastus/mobile-response-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/mobile-response-rest-api.policy.xml"
+      }
+      "mobile-study-rest-api" = {
+        display_name          = "Mobile Study REST API"
+        path                  = "mobile-study-service"
+        service_url           = "https://mobile-backend-prod-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-eastus/mobile-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/mobile-study-rest-api.policy.xml"
+      }
+      "queue-storage-rest-api" = {
+        display_name          = "Queue Storage REST API"
+        path                  = "queue-service"
+        service_url           = "https://stldprodeastus2.queue.core.windows.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-eastus/queue-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/queue-storage-rest-api.policy.xml"
+      }
+      "user-management-rest-api" = {
+        display_name          = "User Management REST API"
+        path                  = "user"
+        service_url           = "https://user-module-prod-eastus.azurewebsites.net"
+        subscription_required = true
+        openapi_path          = "openapi/ldapim-prod-eastus/user-management-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/user-management-rest-api.policy.xml"
+      }
+      "web-study-rest-api" = {
+        display_name          = "Web Study REST API"
+        path                  = "web"
+        service_url           = "https://study-module-prod-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-eastus/web-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-eastus/web-study-rest-api.policy.xml"
+      }
+    }
+
+    # --- Products (7 total — evidence: data/apim_full/ldapim-prod-eastus/products.json) ---
+    apim_products = {
+      "data-api" = {
+        display_name          = "Data API"
+        description           = "Administrators\nDevelopers"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["data-access-rest-api"]
+      }
+      "mobile-api" = {
+        display_name          = "Mobile API"
+        description           = "Administrators, Developers"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["mobile-participant-rest-api", "mobile-response-rest-api", "mobile-study-rest-api"]
+      }
+      "starter" = {
+        display_name          = "Starter"
+        description           = "Subscribers will be able to run 5 calls/minute up to a maximum of 100 calls/week."
+        state                 = "published"
+        subscription_required = true
+        subscriptions_limit   = 1
+        approval_required     = false
+        api_names             = []
+      }
+      "storage-api" = {
+        display_name          = "Storage API"
+        description           = "Administrators, Developers"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["blob-storage-rest-api", "queue-storage-rest-api"]
+      }
+      "unlimited" = {
+        display_name          = "Unlimited"
+        description           = "Subscribers have completely unlimited access to the API. Administrator approval is required."
+        state                 = "published"
+        subscription_required = true
+        subscriptions_limit   = 1
+        approval_required     = true
+        api_names             = []
+      }
+      "user-management-api" = {
+        display_name          = "User Management API"
+        description           = "User Management API"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["user-management-rest-api"]
+      }
+      "web-api" = {
+        display_name          = "Web API"
+        description           = "Web API"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["web-study-rest-api"]
+      }
+    }
+
+    # --- Named Values (13 total — evidence: data/apim_full/ldapim-prod-eastus/named_values.json) ---
+    # T-03-27: ALL prod named values are secret. No minimum-android/ios-app-version non-secrets.
+    # NOTE: ldapim-prod-eastus has 13 NVs vs apim-staging's 17 (no mobile-ios/android client IDs,
+    # no b2c-login-issuer-for-mobile-user, no b2c-well-known-config-url-for-mobile-user).
+    apim_named_values = {
+      "app-reg-client-id-for-apim-to-mobile-app" = {
+        display_name = "app-reg-client-id-for-apim-to-mobile-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-apim-to-web-app" = {
+        display_name = "app-reg-client-id-for-apim-to-web-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-mobile-ropc-app" = {
+        display_name = "app-reg-client-id-for-mobile-ropc-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-apim" = {
+        display_name = "app-reg-client-id-for-web-apim"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-app" = {
+        display_name = "app-reg-client-id-for-web-app"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-mobile-ropc-user" = {
+        display_name = "b2c-login-issuer-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-web-user" = {
+        display_name = "b2c-login-issuer-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-mobile-ropc-user" = {
+        display_name = "b2c-well-known-config-url-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-web-user" = {
+        display_name = "b2c-well-known-config-url-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "680b8a3246346111b04143e2" = {
+        display_name = "Logger-Credentials--680b8a3246346111b04143e3"
+        secret       = true
+        value        = null
+      }
+      "minimum-android-app-version" = {
+        display_name = "minimum-android-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "minimum-ios-app-version" = {
+        display_name = "minimum-ios-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "storage-account-name" = {
+        display_name = "storage-account-name"
+        secret       = true
+        value        = null
+      }
+    }
+
+    # --- Subscriptions (7 non-master — evidence: data/apim_full/ldapim-prod-eastus/subscriptions.json) ---
+    apim_subscriptions = {
+      "680b849b328e530059070001" = { product_name = "starter", state = "active" }
+      "680b849b328e530059070002" = { product_name = "unlimited", state = "active" }
+      "682d6f44217d201e8cfc4d46" = { product_name = "data-api", state = "active" }
+      "682d6fc2217d201e8cfc4d54" = { product_name = "mobile-api", state = "active" }
+      "682d77ac217d201e8cfc4d5b" = { product_name = "storage-api", state = "active" }
+      "682d77e4217d201e8cfc4d64" = { product_name = "user-management-api", state = "active" }
+      "682d7810217d201e8cfc4d6b" = { product_name = "web-api", state = "active" }
+    }
+
+    # --- Policy Fragments (8 total — evidence: data/apim_full/ldapim-prod-eastus/policy_fragments.json) ---
+    # Same as stv2 — 8 fragments (no MobileAccessTokenValidate, no TaskInbound).
+    # CORSPolicy: prod origins (lifedatacorp.com + web-frontend-prod-eastus).
+    apim_policy_fragments = {
+      "BlobStorageCacheLookupPolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-lookup vary-by-developer=\"false\" vary-by-developer-groups=\"false\" must-revalidate=\"true\" downstream-caching-type=\"public\">\r\n\t\t<vary-by-header>Accept</vary-by-header>\r\n\t\t<vary-by-header>Accept-Charset</vary-by-header>\r\n\t\t<vary-by-header>Authorization</vary-by-header>\r\n\t\t<vary-by-header>Container</vary-by-header>\r\n\t\t<vary-by-header>Blob</vary-by-header>\r\n\t</cache-lookup>\r\n</fragment>"
+      }
+      "BlobStorageCacheStorePolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-store duration=\"@{&#xA;        var header = context.Response.Headers.GetValueOrDefault(&quot;Cache-Control&quot;,&quot;&quot;);&#xA;        var maxAge = Regex.Match(header, @&quot;max-age=(?&lt;maxAge&gt;\\d+)&quot;).Groups[&quot;maxAge&quot;]?.Value;&#xA;        return (!string.IsNullOrEmpty(maxAge))?int.Parse(maxAge):300;&#xA;    }\" />\r\n</fragment>"
+      }
+      "BlobStorageGetPolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;    }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "BlobStoragePutPolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-blob-type\" exists-action=\"override\">\r\n\t\t<value>@{string blobType = \"BlockBlob\"; return blobType;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;&#x9;}\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "CORSPolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<cors allow-credentials=\"true\">\r\n\t\t<allowed-origins>\r\n\t\t\t<origin>https://web-frontend-prod-eastus.azurewebsites.net</origin>\r\n\t\t\t<origin>https://web-frontend-prod-eastus.azurewebsites.net/</origin>\r\n\t\t\t<origin>https://app.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apiportal.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apimgmt.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://app.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apiportal.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apimgmt.lifedatacorp.com/</origin>\r\n\t\t</allowed-origins>\r\n\t\t<allowed-methods preflight-result-max-age=\"800\">\r\n\t\t\t<method>*</method>\r\n\t\t</allowed-methods>\r\n\t\t<allowed-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</allowed-headers>\r\n\t\t<expose-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</expose-headers>\r\n\t</cors>\r\n</fragment>"
+      }
+      "MobileROPCAccessTokenValidatePolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. ROPC Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-mobile-ropc-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-ropc-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-mobile-app}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-mobile-ropc-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+      "QueueServicePolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-date\" exists-action=\"override\">\r\n\t\t<value>@{string utcTime = System.DateTime.UtcNow.ToString(\"dddd, dd-MMM-y HH:mm:ss 'GMT'\"); return utcTime;}</value>\r\n\t</set-header>\r\n\t<set-variable name=\"RequestIdentifierToken\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;RequestIdentifierToken&quot;))\" />\r\n\t<set-variable name=\"QueueName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;QueueName&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-backend-service base-url=\"@{&#xA;&#x9;&#x9;string queueName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;QueueName&quot;);&#xA;&#x9;&#x9;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;&#x9;&#x9;return String.Format(&quot;https://{0}.queue.core.windows.net/{1}/messages&quot;, storageAccountName, queueName);     &#xA;  }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n</fragment>"
+      }
+      "WebAccessTokenValidatePolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Web Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-web-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-apim}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-web-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Instance 3: ldapim-prod-stv2-eastus
+  # Evidence: apim_services.json name=ldapim-prod-stv2-eastus
+  #           SKU=StandardV2_1, VNet=External, ldapim-prod-stv2-eastus-outbound-subnet
+  #           data/apim_full/ldapim-prod-stv2-eastus/
+  # T-03-30: New StandardV2 target instance — migration destination from ldapim-prod-eastus.
+  # Subscription: only "master" (Azure-managed) — no authored subscriptions.
+  # ---------------------------------------------------------------------------
+  "ldapim-prod-stv2-eastus" = {
+    apim_name            = "ldapim-prod-stv2-eastus"
+    apim_publisher_name  = "LifeData LLC."
+    apim_publisher_email = "amalesh.debnath@gmail.com"
+    apim_sku_name        = "StandardV2_1"       # evidence: apim_services.json sku.name=StandardV2, capacity=1
+    apim_vnet_type       = "External"           # evidence: apim_services.json virtualNetworkType=External
+    apim_subnet_key      = "apim_stv2_outbound" # uses var.apim_stv2_subnet_key from root locals
+
+    apim_service_policy_xml_path = "policies/ldapim-prod-stv2-eastus/service.policy.xml"
+
+    # StandardV2 with custom hostname configurations
+    # evidence: apim_services.json hostnameConfigurations
+    apim_hostname_configurations = {
+      proxy = [
+        {
+          host_name           = "api.lifedatacorp.com"
+          key_vault_id        = "https://kvproductioneastus.vault.azure.net/secrets/api-ssl-cert"
+          default_ssl_binding = true
+        }
+      ]
+      management = [
+        {
+          host_name    = "apimgmt.lifedatacorp.com"
+          key_vault_id = "https://kvproductioneastus.vault.azure.net/secrets/apimgmt-ssl-cert"
+        }
+      ]
+      portal = []
+      developer_portal = [
+        {
+          host_name    = "apiportal.lifedatacorp.com"
+          key_vault_id = "https://kvproductioneastus.vault.azure.net/secrets/apiportal-ssl-cert"
+        }
+      ]
+    }
+
+    apim_aad_identity_provider_enabled = false
+    apim_aad_client_id                 = ""
+    apim_aad_allowed_tenants           = []
+
+    # --- APIs (8 total — evidence: data/apim_full/ldapim-prod-stv2-eastus/apis.json) ---
+    apim_apis = {
+      "blob-storage-rest-api" = {
+        display_name          = "Blob Storage REST API"
+        path                  = "blob-service"
+        service_url           = "https://stldprodeastus.blob.core.windows.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/blob-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/blob-storage-rest-api.policy.xml"
+      }
+      "data-access-rest-api" = {
+        display_name          = "Data Access REST API"
+        path                  = "data-access"
+        service_url           = "https://data-access-prod-eastus.azurewebsites.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/data-access-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/data-access-rest-api.policy.xml"
+      }
+      "mobile-participant-rest-api" = {
+        display_name          = "Mobile Participant REST API"
+        path                  = "mobile-participant-service"
+        service_url           = "https://mobile-backend-prod-eastus.azurewebsites.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/mobile-participant-rest-api.openapi.yaml"
+        policy_xml_path       = ""
+      }
+      "mobile-response-rest-api" = {
+        display_name          = "Mobile Response REST API"
+        path                  = "mobile-response"
+        service_url           = "https://stprodeastus.queue.core.windows.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/mobile-response-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/mobile-response-rest-api.policy.xml"
+      }
+      "mobile-study-rest-api" = {
+        display_name          = "Mobile Study REST API"
+        path                  = "mobile-study-service"
+        service_url           = "https://mobile-backend-prod-eastus.azurewebsites.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/mobile-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/mobile-study-rest-api.policy.xml"
+      }
+      "queue-storage-rest-api" = {
+        display_name          = "Queue Storage REST API"
+        path                  = "queue-service"
+        service_url           = "https://stldprodeastus.queue.core.windows.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/queue-storage-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/queue-storage-rest-api.policy.xml"
+      }
+      "user-management-rest-api" = {
+        display_name          = "User Management REST API"
+        path                  = "user"
+        service_url           = "https://user-module-prod-eastus.azurewebsites.net/"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/user-management-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/user-management-rest-api.policy.xml"
+      }
+      "web-study-rest-api" = {
+        display_name          = "Web Study REST API"
+        path                  = "web"
+        service_url           = "https://study-module-prod-eastus.azurewebsites.net"
+        subscription_required = false
+        openapi_path          = "openapi/ldapim-prod-stv2-eastus/web-study-rest-api.openapi.yaml"
+        policy_xml_path       = "policies/ldapim-prod-stv2-eastus/web-study-rest-api.policy.xml"
+      }
+    }
+
+    # --- Products (5 total — evidence: data/apim_full/ldapim-prod-stv2-eastus/products.json) ---
+    # Fewer products than other instances (newer, being set up during migration period)
+    apim_products = {
+      "data-access-rest-api" = {
+        display_name          = "Data Access REST API"
+        description           = "This API allow web application users to interact with the LIFEDATA data-access service."
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["data-access-rest-api"]
+      }
+      "mobile-api" = {
+        display_name          = "Mobile API"
+        description           = "This API allow mobile users to interact with the LIFEDATA cloud service."
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["mobile-participant-rest-api", "mobile-response-rest-api", "mobile-study-rest-api"]
+      }
+      "storage-api" = {
+        display_name          = "Storage API"
+        description           = "APIM wrapper for accessing the Azure Blob Storage REST API and Azure Queue Storage REST API"
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["blob-storage-rest-api", "queue-storage-rest-api"]
+      }
+      "user-management-api" = {
+        display_name          = "User Management API"
+        description           = "This API allow customers to create users for their organization."
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["user-management-rest-api"]
+      }
+      "web-api" = {
+        display_name          = "Web API"
+        description           = "This API allow web application users to interact with the LIFEDATA study service."
+        state                 = "published"
+        subscription_required = false
+        api_names             = ["web-study-rest-api"]
+      }
+    }
+
+    # --- Named Values (13 total — evidence: data/apim_full/ldapim-prod-stv2-eastus/named_values.json) ---
+    # T-03-27: Same pattern as ldapim-prod-eastus — all secret=true except minimum-android/ios.
+    apim_named_values = {
+      "app-reg-client-id-for-apim-to-mobile-app" = {
+        display_name = "app-reg-client-id-for-apim-to-mobile-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-apim-to-web-app" = {
+        display_name = "app-reg-client-id-for-apim-to-web-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-mobile-ropc-app" = {
+        display_name = "app-reg-client-id-for-mobile-ropc-app"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-apim" = {
+        display_name = "app-reg-client-id-for-web-apim"
+        secret       = true
+        value        = null
+      }
+      "app-reg-client-id-for-web-app" = {
+        display_name = "app-reg-client-id-for-web-app"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-mobile-ropc-user" = {
+        display_name = "b2c-login-issuer-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-login-issuer-for-web-user" = {
+        display_name = "b2c-login-issuer-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-mobile-ropc-user" = {
+        display_name = "b2c-well-known-config-url-for-mobile-ropc-user"
+        secret       = true
+        value        = null
+      }
+      "b2c-well-known-config-url-for-web-user" = {
+        display_name = "b2c-well-known-config-url-for-web-user"
+        secret       = true
+        value        = null
+      }
+      "6a117da4d6915215b477b54d" = {
+        display_name = "Logger-Credentials--6a117da4d6915215b477b54e"
+        secret       = true
+        value        = null
+      }
+      "minimum-android-app-version" = {
+        display_name = "minimum-android-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "minimum-ios-app-version" = {
+        display_name = "minimum-ios-app-version"
+        secret       = false
+        value        = "0.0.0"
+      }
+      "storage-account-name" = {
+        display_name = "storage-account-name"
+        secret       = true
+        value        = null
+      }
+    }
+
+    # --- Subscriptions (0 non-master — evidence: data/apim_full/ldapim-prod-stv2-eastus/subscriptions.json) ---
+    # Only "master" exists (Azure-managed). Not authored.
+    apim_subscriptions = {}
+
+    # --- Policy Fragments (8 total — evidence: data/apim_full/ldapim-prod-stv2-eastus/policy_fragments.json) ---
+    # Same 8 as ldapim-prod-eastus. CORSPolicy: same prod origins.
+    apim_policy_fragments = {
+      "BlobStorageCacheLookupPolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-lookup vary-by-developer=\"false\" vary-by-developer-groups=\"false\" must-revalidate=\"true\" downstream-caching-type=\"public\">\r\n\t\t<vary-by-header>Accept</vary-by-header>\r\n\t\t<vary-by-header>Accept-Charset</vary-by-header>\r\n\t\t<vary-by-header>Authorization</vary-by-header>\r\n\t\t<vary-by-header>Container</vary-by-header>\r\n\t\t<vary-by-header>Blob</vary-by-header>\r\n\t</cache-lookup>\r\n</fragment>"
+      }
+      "BlobStorageCacheStorePolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<cache-store duration=\"@{&#xA;        var header = context.Response.Headers.GetValueOrDefault(&quot;Cache-Control&quot;,&quot;&quot;);&#xA;        var maxAge = Regex.Match(header, @&quot;max-age=(?&lt;maxAge&gt;\\d+)&quot;).Groups[&quot;maxAge&quot;]?.Value;&#xA;        return (!string.IsNullOrEmpty(maxAge))?int.Parse(maxAge):300;&#xA;    }\" />\r\n</fragment>"
+      }
+      "BlobStorageGetPolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;    }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "BlobStoragePutPolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<!-- <set-variable name=\"ContainerName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;containerName&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Url.Query.GetValueOrDefault(&quot;blobName&quot;))\" /> -->\r\n\t<set-variable name=\"ContainerName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Container&quot;))\" />\r\n\t<set-variable name=\"BlobName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;Blob&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"Container\" exists-action=\"delete\" />\r\n\t<set-header name=\"Blob\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-blob-type\" exists-action=\"override\">\r\n\t\t<value>@{string blobType = \"BlockBlob\"; return blobType;}</value>\r\n\t</set-header>\r\n\t<set-backend-service base-url=\"@{&#xA;string containerName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;ContainerName&quot;);&#xA;string blobName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;BlobName&quot;);&#xA;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;return String.Format(&quot;https://{0}.blob.core.windows.net/{1}/{2}&quot;, storageAccountName, containerName, blobName);     &#xA;&#x9;}\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n\t<rewrite-uri template=\"/\" />\r\n</fragment>"
+      }
+      "CORSPolicy" = {
+        description = "Cors policy for our APIS. should be applied on the global scope of the APIM"
+        value       = "<fragment>\r\n\t<cors allow-credentials=\"true\">\r\n\t\t<allowed-origins>\r\n\t\t\t<origin>https://web-frontend-prod-eastus.azurewebsites.net</origin>\r\n\t\t\t<origin>https://web-frontend-prod-eastus.azurewebsites.net/</origin>\r\n\t\t\t<origin>https://app.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apiportal.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://apimgmt.lifedatacorp.com</origin>\r\n\t\t\t<origin>https://app.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apiportal.lifedatacorp.com/</origin>\r\n\t\t\t<origin>https://apimgmt.lifedatacorp.com/</origin>\r\n\t\t</allowed-origins>\r\n\t\t<allowed-methods preflight-result-max-age=\"800\">\r\n\t\t\t<method>*</method>\r\n\t\t</allowed-methods>\r\n\t\t<allowed-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</allowed-headers>\r\n\t\t<expose-headers>\r\n\t\t\t<header>*</header>\r\n\t\t</expose-headers>\r\n\t</cors>\r\n</fragment>"
+      }
+      "MobileROPCAccessTokenValidatePolicy" = {
+        description = ""
+        value       = "<!--\r\n    IMPORTANT:\r\n    - Policy fragment are included as-is whenever they are referenced.\r\n    - If using variables. Ensure they are setup before use.\r\n    - Copy and paste your code here or simply start coding\r\n-->\r\n<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. ROPC Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-mobile-ropc-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-mobile-ropc-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-mobile-app}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-mobile-ropc-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+      "QueueServicePolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<set-header name=\"Ocp-Apim-Subscription-Key\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Site\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Mode\" exists-action=\"delete\" />\r\n\t<set-header name=\"Sec-Fetch-Dest\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept\" exists-action=\"delete\" />\r\n\t<set-header name=\"Accept-Encoding\" exists-action=\"delete\" />\r\n\t<set-header name=\"Referer\" exists-action=\"delete\" />\r\n\t<set-header name=\"X-Forwarded-For\" exists-action=\"delete\" />\r\n\t<set-header name=\"x-ms-version\" exists-action=\"override\">\r\n\t\t<value>@{string version = \"2021-02-12\"; return version;}</value>\r\n\t</set-header>\r\n\t<set-header name=\"x-ms-date\" exists-action=\"override\">\r\n\t\t<value>@{string utcTime = System.DateTime.UtcNow.ToString(\"dddd, dd-MMM-y HH:mm:ss 'GMT'\"); return utcTime;}</value>\r\n\t</set-header>\r\n\t<set-variable name=\"RequestIdentifierToken\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;RequestIdentifierToken&quot;))\" />\r\n\t<set-variable name=\"QueueName\" value=\"@(context.Request.Headers.GetValueOrDefault(&quot;QueueName&quot;))\" />\r\n\t<set-variable name=\"StorageAccountName\" value=\"{{storage-account-name}}\" />\r\n\t<set-backend-service base-url=\"@{&#xA;&#x9;&#x9;string queueName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;QueueName&quot;);&#xA;&#x9;&#x9;string storageAccountName = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;StorageAccountName&quot;);&#xA;&#x9;&#x9;return String.Format(&quot;https://{0}.queue.core.windows.net/{1}/messages&quot;, storageAccountName, queueName);     &#xA;  }\" />\r\n\t<authentication-managed-identity resource=\"https://storage.azure.com/\" />\r\n</fragment>"
+      }
+      "WebAccessTokenValidatePolicy" = {
+        description = ""
+        value       = "<fragment>\r\n\t<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" failed-validation-error-message=\"Unauthorized. Web Access token is missing or invalid.\">\r\n\t\t<openid-config url=\"{{b2c-well-known-config-url-for-web-user}}\" />\r\n\t\t<audiences>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-apim-to-web-app}}</audience>\r\n\t\t\t<audience>{{app-reg-client-id-for-web-apim}}</audience>\r\n\t\t</audiences>\r\n\t\t<issuers>\r\n\t\t\t<issuer>{{b2c-login-issuer-for-web-user}}</issuer>\r\n\t\t</issuers>\r\n\t</validate-jwt>\r\n</fragment>"
+      }
+    }
+  }
+}
+
 # --- end apim values ---
 
 # ---------------------------------------------------------------------------

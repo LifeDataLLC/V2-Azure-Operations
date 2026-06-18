@@ -1,0 +1,62 @@
+openapi: 3.0.1
+info:
+  title: Mobile Response REST API
+  description: This API allow mobile users to interact with the LIFEDATA cloud service.
+  termsOfService: https://www.lifedatacorp.com/lifedata-terms-of-use/
+  contact:
+    name: Lifedata Corp
+    url: https://www.lifedatacorp.com/
+    email: info@lifedatacorp.com
+  license:
+    name: Lifedata license
+    url: https://www.lifedatacorp.com/license
+  version: '1.0'
+servers:
+  - url: https://api.qa.lifedatadev.com/mobile-response
+paths:
+  /:
+    post:
+      tags:
+        - MobileResponse
+      summary: Send Mobile Response to Queue Storage
+      description: This will store the mobile response send as part of the body to the Azure Storage Queue identified by the name provided in the header.
+      operationId: post
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: RequestIdentifierToken
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: QueueName
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: XML Object containing the JSON Stringified response from mobile
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/QueueMessage'
+            example: <QueueMessage> <MessageText>the stringified JSON will go here. Should be utf-8 encoded</MessageText> </QueueMessage>
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    QueueMessage:
+      required:
+        - MessageText
+      type: object
+      properties:
+        MessageText:
+          type: string
+          example: the stringified JSON will go here. Should be utf-8 encoded
+tags:
+  - name: MobileResponse
+    description: API related to Mobile Response

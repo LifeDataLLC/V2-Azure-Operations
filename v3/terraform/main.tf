@@ -109,13 +109,58 @@ module "keyvault" {
 }
 # --- end keyvault module call ---
 
-# --- apim module call (Plan 03-07) ---
-# module "apim" {
-#   source              = "./modules/apim"
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # APIM SKU/instance/child config variables wired by Plan 03-07
-# }
+# --- apim module call (Plan 03-08) ---
+# D-310: ALL instances both scopes — one module call per instance via for_each.
+# D-309: Each call authors the full child graph (apis/products/named_values/subscriptions/fragments).
+# D-307: apim_sku_name / apim_vnet_type are no-default vars set per-instance in tfvars.
+# T-03-27: Secret named values authored with secret=true, no literal value.
+# T-03-29: Policy fragments (B2C JWT + CORS) cloned verbatim.
+# Wire scaffold_contract: prod.tfvars networking.apim_private_endpoint_resource_id
+#   is wired to module.apim["ldapim-prod-stv2-eastus"].gateway_id (the prod StV2 instance).
+# Wire scaffold_contract: additional_alert_scope_ids in observability wired to all APIM IDs.
+
+# Build a local with the correct subnet ID per instance (based on apim_subnet_key)
+locals {
+  apim_subnet_ids = {
+    for inst_name, inst in var.apim_instances : inst_name =>
+    inst.apim_subnet_key != "" ? module.networking.subnet_ids[inst.apim_subnet_key] : ""
+  }
+}
+
+module "apim" {
+  source   = "./modules/apim"
+  for_each = var.apim_instances
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # Service-level (D-307 no-default — set per instance in tfvars)
+  apim_name            = each.value.apim_name
+  apim_publisher_name  = each.value.apim_publisher_name
+  apim_publisher_email = each.value.apim_publisher_email
+  apim_sku_name        = each.value.apim_sku_name  # Developer_1 or StandardV2_1 (D-307)
+  apim_vnet_type       = each.value.apim_vnet_type # Internal | External | None (D-307)
+  apim_subnet_id       = local.apim_subnet_ids[each.key]
+
+  # Service-level policy XML path (relative to modules/apim/)
+  apim_service_policy_xml_path = each.value.apim_service_policy_xml_path
+
+  # Hostname configurations (KV-backed certs, T-03-25)
+  apim_hostname_configurations = each.value.apim_hostname_configurations
+
+  # AAD identity provider (prod instances only — D-309)
+  apim_aad_identity_provider_enabled = each.value.apim_aad_identity_provider_enabled
+  apim_aad_client_id                 = each.value.apim_aad_client_id
+  apim_aad_allowed_tenants           = each.value.apim_aad_allowed_tenants
+
+  # Child graph (D-309 full clone, D-305 exception)
+  apim_apis             = each.value.apim_apis
+  apim_products         = each.value.apim_products
+  apim_named_values     = each.value.apim_named_values
+  apim_subscriptions    = each.value.apim_subscriptions
+  apim_policy_fragments = each.value.apim_policy_fragments
+}
 # --- end apim module call ---
 
 # --- app-gateway module call (Plan 03-07) ---
@@ -198,7 +243,10 @@ module "observability" {
     merge([for env, svc in module.app_service : { for name, id in svc.function_app_ids : "fapp_${name}" => id }]...),
     # Per-env SQL server IDs
     { for env, sql in module.sql : "sql_${env}" => sql.server_id },
-    # Additional explicit scope IDs from tfvars (APIM, etc., not yet wired via module)
+    # APIM instance IDs (all instances in scope — from module.apim for_each outputs)
+    # Wired by Plan 03-08 — resolves the 03-07 TODO in additional_alert_scope_ids.
+    { for inst_name, apim_inst in module.apim : "apim_${inst_name}" => apim_inst.gateway_id },
+    # Additional explicit scope IDs from tfvars (any remaining custom scopes)
     var.additional_alert_scope_ids,
   )
 

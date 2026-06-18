@@ -1,0 +1,62 @@
+﻿<!--
+    - Policies are applied in the order they appear.
+    - Position <base/> inside a section to inherit policies from the outer scope.
+    - Comments within policies are not preserved.
+-->
+<!-- Add policies as children to the <inbound>, <outbound>, <backend>, and <on-error> elements -->
+<policies>
+	<!-- Throttle, authorize, validate, cache, or transform the requests -->
+	<inbound>
+		<base />
+		<include-fragment fragment-id="CORSPolicy" />
+		<include-fragment fragment-id="WebAccessTokenValidatePolicy" />
+		<set-header name="Authorization" exists-action="override">
+			<value>@(context.Request.Headers.GetValueOrDefault("Authorization"))</value>
+		</set-header>
+		<set-variable name="jwtToken" value="@{
+            string authHeader = context.Request.Headers.GetValueOrDefault("Authorization", "");
+            if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) {
+                return authHeader.Substring(7).Trim();
+            }
+            return authHeader;
+        }" />
+		<set-variable name="internalUserId" value="@{
+            string token = (string)context.Variables["jwtToken"];
+            if (string.IsNullOrEmpty(token)) {
+                return string.Empty;
+            }
+            
+            // Decode the token framework structure safely
+            var jwt = token.AsJwt();
+            if (jwt != null && jwt.Claims.ContainsKey("extension_UserID")) {
+                return jwt.Claims["extension_UserID"].FirstOrDefault();
+            }
+            return string.Empty;
+        }" />
+		<choose>
+			<when condition="@(string.IsNullOrEmpty((string)context.Variables["internalUserId"]))">
+				<return-response>
+					<set-status code="401" reason="User Not Allowed" />
+					<set-body>{"error": "Missing or invalid identity assertion claim."}</set-body>
+				</return-response>
+			</when>
+			<otherwise>
+				<set-query-parameter name="UserID" exists-action="override">
+					<value>@((string)context.Variables["internalUserId"])</value>
+				</set-query-parameter>
+			</otherwise>
+		</choose>
+	</inbound>
+	<!-- Control if and how the requests are forwarded to services  -->
+	<backend>
+		<base />
+	</backend>
+	<!-- Customize the responses -->
+	<outbound>
+		<base />
+	</outbound>
+	<!-- Handle exceptions and customize error responses  -->
+	<on-error>
+		<base />
+	</on-error>
+</policies>

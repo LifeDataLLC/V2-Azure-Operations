@@ -1,0 +1,148 @@
+﻿<!--
+    IMPORTANT:
+    - Policy elements can appear only within the <inbound>, <outbound>, <backend> section elements.
+    - To apply a policy to the incoming request (before it is forwarded to the backend service), place a corresponding policy element within the <inbound> section element.
+    - To apply a policy to the outgoing response (before it is sent back to the caller), place a corresponding policy element within the <outbound> section element.
+    - To add a policy, place the cursor at the desired insertion point and select a policy from the sidebar.
+    - To remove a policy, delete the corresponding policy statement from the policy document.
+    - Position the <base> element within a section element to inherit all policies from the corresponding section element in the enclosing scope.
+    - Remove the <base> element to prevent inheriting policies from the corresponding section element in the enclosing scope.
+    - Policies are applied in the order of their appearance, from the top down.
+    - Comments within policy elements are not supported and may disappear. Place your comments between policy elements or at a higher level scope.
+-->
+<policies>
+	<inbound>
+		<include-fragment fragment-id="CORSPolicy" />
+		<set-variable name="user-agent" value="@(context.Request.Headers.GetValueOrDefault("x-user-agent", "unknown"))" />
+		<set-variable name="isMobile" value="@(context.Request.Headers.GetValueOrDefault("x-user-agent","").Contains("android") || context.Request.Headers.GetValueOrDefault("x-user-agent","").Contains("iPhone"))" />
+		<!-- 1. Get versions and user agent from headers. Default to "0.0.0" and "unknown" for safety. -->
+		<set-variable name="currentAppVersion" value="@(context.Request.Headers.GetValueOrDefault("x-user-app-version", "0.0.0"))" />
+		<!-- Store Named Values in variables for a clean, early-exit check. -->
+		<set-variable name="minAndroid" value="{{minimum-android-app-version}}" />
+		<set-variable name="minIPhone" value="{{minimum-ios-app-version}}" />
+		<base />
+		<choose>
+			<when condition="@(context.Variables.GetValueOrDefault<bool>("isMobile"))">
+				<include-fragment fragment-id="MobileROPCAccessTokenValidatePolicy" />
+				<!-- 2. Main Check Block: Only proceed with version enforcement if at least one minimum version is set above "0.0.0". -->
+				<choose>
+					<when condition="@{
+                        string minAndroid = (string)context.Variables["minAndroid"];
+                        string minIPhone = (string)context.Variables["minIPhone"];
+
+                        // Condition to skip the check: if both minimum versions are exactly "0.0.0".
+                        return (minAndroid.Equals("0.0.0") && minIPhone.Equals("0.0.0"));
+                    }">
+						<!-- 
+                        If the condition is TRUE (i.e., both minimums are 0.0.0), we do nothing. 
+                        The policy will fall through to <base /> below, effectively skipping the enforcement.
+                        -->
+					</when>
+					<otherwise>
+						<!-- 
+                        If the condition is FALSE (i.e., at least one minimum version is > 0.0.0), 
+                        we proceed with the platform-specific version check and enforcement.
+                        -->
+						<!-- 2a. Select the correct minimum required version based on the user agent 
+                            and store it directly in 'minVerStr' (eliminating 'minimum-app-version'). -->
+						<choose>
+							<when condition="@(((string)context.Variables["user-agent"]).Equals("android", StringComparison.OrdinalIgnoreCase))">
+								<!-- Use Android's minimum version (stored in minAndroid variable) -->
+								<set-variable name="minVerStr" value="@((string)context.Variables["minAndroid"])" />
+							</when>
+							<otherwise>
+								<!-- Default to iOS/iPhone minimum version (stored in minIPhone variable) -->
+								<set-variable name="minVerStr" value="@((string)context.Variables["minIPhone"])" />
+							</otherwise>
+						</choose>
+						<!-- 3. Compare the versions and block the request if the current version is too old. -->
+						<choose>
+							<when condition="@{
+                                // Retrieve variables
+                                string currentVerStr = (string)context.Variables["currentAppVersion"];
+                                string minVerStr = (string)context.Variables["minVerStr"]; 
+
+                                // FIX: Manual semantic version comparison using string split and int.TryParse 
+                                // to avoid the "System.Version is not supported" error.
+                                
+                                string[] vCurrParts = currentVerStr.Split('.');
+                                string[] vMinParts = minVerStr.Split('.');
+
+                                int maxLen = Math.Max(vCurrParts.Length, vMinParts.Length);
+
+                                for (int i = 0; i < maxLen; i++) {
+                                    int curr = 0;
+                                    int min = 0;
+                                    
+                                    // Attempt to parse the current part, default to 0 if missing or invalid
+                                    if (i < vCurrParts.Length && int.TryParse(vCurrParts[i], out int resultCurr)) {
+                                        curr = resultCurr;
+                                    }
+
+                                    // Attempt to parse the minimum part, default to 0 if missing or invalid
+                                    if (i < vMinParts.Length && int.TryParse(vMinParts[i], out int resultMin)) {
+                                        min = resultMin;
+                                    }
+
+                                    if (curr < min) {
+                                        return true; // Current is lower
+                                    }
+                                    
+                                    if (curr > min) {
+                                        return false; // Current is higher or equal
+                                    }
+                                }
+                                return false; // Versions are equal (current is not lower)
+
+                            }">
+								<!-- 
+                                This block executes if the 'x-user-app-version' is LOWER than the required version.
+                                A dynamic JSON body is created for a more informative error message.
+                                -->
+								<return-response>
+									<set-status code="200" reason="OK" />
+									<set-header name="Content-Type" exists-action="override">
+										<value>application/json</value>
+									</set-header>
+									<set-body>@{
+                                        string requiredVersion = (string)context.Variables["minVerStr"];
+                                        string clientType = (string)context.Variables["user-agent"];
+                                        
+                                        // Construct the dynamic error message
+                                        string errorMessage = "We are sorry but in order to continue to use the LifeData app you will need to update to the most recent version for compatibility reasons. Please click “Update” below and you can update the app from the App Store.";
+
+                                        // Use verbatim string literal ($@"") for clean, supported JSON construction.
+                                        // The .Replace is for JSON-safe escaping, even though this message has no quotes.
+                                        return $@"{{
+                                            ""ServerResponse"": ""[]"",
+                                            ""ServerError"": {{
+                                                ""ErrorCode"": 50,
+                                                ""ErrorTitle"": ""Unsupported Version Detected"",
+                                                ""ErrorMessage"": ""{errorMessage}""
+                                            }}
+                                        }}";
+                                    }</set-body>
+								</return-response>
+							</when>
+						</choose>
+					</otherwise>
+				</choose>
+			</when>
+			<otherwise>
+				<include-fragment fragment-id="WebAccessTokenValidatePolicy" />
+			</otherwise>
+		</choose>
+		<set-header name="Authorization" exists-action="override">
+			<value>@(context.Request.Headers.GetValueOrDefault("Authorization"))</value>
+		</set-header>
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

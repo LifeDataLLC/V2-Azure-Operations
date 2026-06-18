@@ -1,0 +1,61 @@
+﻿<!--
+    IMPORTANT:
+    - Policy elements can appear only within the <inbound>, <outbound>, <backend> section elements.
+    - To apply a policy to the incoming request (before it is forwarded to the backend service), place a corresponding policy element within the <inbound> section element.
+    - To apply a policy to the outgoing response (before it is sent back to the caller), place a corresponding policy element within the <outbound> section element.
+    - To add a policy, place the cursor at the desired insertion point and select a policy from the sidebar.
+    - To remove a policy, delete the corresponding policy statement from the policy document.
+    - Position the <base> element within a section element to inherit all policies from the corresponding section element in the enclosing scope.
+    - Remove the <base> element to prevent inheriting policies from the corresponding section element in the enclosing scope.
+    - Policies are applied in the order of their appearance, from the top down.
+    - Comments within policy elements are not supported and may disappear. Place your comments between policy elements or at a higher level scope.
+-->
+<policies>
+	<inbound>
+		<base />
+		<include-fragment fragment-id="CORSPolicy" />
+		<include-fragment fragment-id="WebAccessTokenValidatePolicy" />
+		<set-variable name="jwtToken" value="@{
+            string authHeader = context.Request.Headers.GetValueOrDefault("Authorization", "");
+            if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) {
+                return authHeader.Substring(7).Trim();
+            }
+            return authHeader;
+        }" />
+		<set-variable name="internalUserId" value="@{
+            string token = (string)context.Variables["jwtToken"];
+            if (string.IsNullOrEmpty(token)) {
+                return string.Empty;
+            }
+            
+            // Decode the token framework structure safely
+            var jwt = token.AsJwt();
+            if (jwt != null && jwt.Claims.ContainsKey("extension_UserID")) {
+                return jwt.Claims["extension_UserID"].FirstOrDefault();
+            }
+            return string.Empty;
+        }" />
+		<choose>
+			<when condition="@(string.IsNullOrEmpty((string)context.Variables["internalUserId"]))">
+				<return-response>
+					<set-status code="401" reason="User Not Allowed" />
+					<set-body>{"error": "Missing or invalid identity assertion claim."}</set-body>
+				</return-response>
+			</when>
+			<otherwise>
+				<set-query-parameter name="UserID" exists-action="override">
+					<value>@((string)context.Variables["internalUserId"])</value>
+				</set-query-parameter>
+			</otherwise>
+		</choose>
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

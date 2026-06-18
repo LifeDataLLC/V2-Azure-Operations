@@ -1,0 +1,1367 @@
+openapi: 3.0.1
+info:
+  title: Mobile Study REST API
+  description: This API allow mobile users to interact with the LIFEDATA cloud service.
+  termsOfService: https://www.lifedatacorp.com/lifedata-terms-of-use/
+  contact:
+    name: Lifedata Corp
+    url: https://www.lifedatacorp.com/
+    email: info@lifedatacorp.com
+  license:
+    name: Lifedata license
+    url: https://www.lifedatacorp.com/license
+  version: '1.0'
+servers:
+  - url: https://api.dev.lifedatadev.com/mobile-study-service
+paths:
+  /mobile-studies/study-detail:
+    get:
+      tags:
+        - MobileStudy
+      summary: Get study by ID
+      description: Returns the details of the study identified by the provided id
+      operationId: get-mobile-studies-study-detail-participantid-participantid-studyid-studyid
+      parameters:
+        - name: ParticipantID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: StudyID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: OrganizationID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: StudyVersion
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: LanguageID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: TimeOffSet
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Time offset format +/-HH:MM
+            example: +06:00
+        - name: DeviceIdent
+          in: query
+          schema:
+            type: string
+            description: Maximum length 256
+        - name: AccessCode
+          in: query
+          schema:
+            type: string
+            description: Maximum length 256
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyModel'
+              example:
+                StudyVO:
+                  OrganizationID: 1
+                  StudyID: 1
+                  Version: 1
+                  FilePath: ''
+                  GatherGeolocationFlag: 0
+                  IdleTimeoutPeriod: 0
+                  StartDayOfWeek: 1
+                  YokeEnabledFlag: 0
+                  DefineCompletedSessionFlag: 0
+                  PublishModeFlag: 0
+                  ParticipantFlag: 0
+                  LevelOfAuthentication: 1
+                  BiometricFlag: 0
+                  SingleStudyFlag: 0
+                  AccessMode: 1
+                  StudyDownloadSeqNum: 1
+                  LanguageID: 1
+                  StudyTitle: Test Study
+                  StudyWelcomeHeading: Test Welcome Heading
+                  StudyIntroMessage: Test Intro Message
+                  StudyInstructions: Test Study Instructions
+                  ContactInstructions: Test Study Contact Instruction
+                ResponseStatForNISVO:
+                  ConsiderSkipsFlag: 0
+                  PercentageOfQuestionsNeedToBeResponded: 25
+                  ShowOverallNotificationResponseRateFlag: 0
+                  ShowIndividualNotificationResponseRateFlag: 0
+                ResponseStatForCheckInVO:
+                  ConsiderSkipsFlag: 0
+                  PercentageOfQuestionsNeedToBeResponded: 25
+                  ShowOverallCheckInResponseRateFlag: 0
+                  ShowIndividualCheckInResponseRateFlag: 0
+                ContactVO:
+                  FullName: Amalesh Debnath
+                  ContactTitle: LifeData Admin
+                  Phone: +880-1612625374
+                  ContactEmail: amalesh.debnath@lifedatacorp.com
+                  Address: 'Dhaka, Bangladesh'
+                SessionVO:
+                  - StudyID: 1
+                    SessionID: 1
+                    SessionType: 1
+                    SessionOrder: 1
+                    BlockOrderFlag: 1
+                    ReminderEnabledFlag: 1
+                    SessionTitle: Test Check-in Session
+                    SessionBriefInstruction: Test Instruction
+                    SessionInstruction: Session Instruction
+                BlockVO:
+                  - SessionID: 1
+                    BlockID: 1
+                    BlockOrder: 1
+                    OrderFlag: 0
+                    NumberOfQuestionPerSession: 1
+                    QuestionOrderFlag: 1
+                    IsSinglePage: 0
+                QuestionVO:
+                  - BlockID: 1
+                    QuestionID: 1
+                    QuestionType: 1
+                    QuestionOrder: 1
+                    RequireResponseFlag: '0'
+                    BackDisabledFlag: '0'
+                    AdditionalData: string
+                    QuestionText: Test Question
+                    QuestionAdditionalData: string
+                QuestionOptionVO:
+                  - QuestionID: 1
+                    QuestionOptionID: 1
+                    OptionOrder: 1
+                    Value: 1
+                    Caption: good
+                SessionScheduleVO:
+                  - SessionID: 1
+                    SessionScheduleID: 1
+                    ScheduleFlag: 1
+                    StartImmediately: 0
+                    StopWithStudyEnd: 0
+                    NotificationTimeType: 0
+                    ScheduleTiming: '{"ScheduleToStart": 1, "StartOn": 1, "ScheduleToEnd": 1, "EndOn": 5}'
+                    NotificationTiming:
+                      Sample: 1
+                      WhatDaysForSchedule: 1
+                      StartTime: '2025-12-06'
+                      EndTime: '2025-12-06'
+                      NumberOfNotification: 2
+                      TimeBetweenNotification: 20
+                    ResponseWindow: 45
+                    PauseWithTrigger: 0
+                    DeactivateWithTrigger: 0
+                    Reminders: '[{"WeekDays":"0","NotificationTime":"10:30"}]'
+                    RemindOnlyIfNoResponse: 0
+                TriggerVO:
+                  - SessionID: 1
+                    TriggerID: 1
+                    TriggerForFlag: '1'
+                    TriggerActionType: 1
+                    TimingData:
+                      DeactivateMins: 100
+                      DeactivatePermanently: 0
+                      ResetAfter: 0
+                    Settings:
+                      ResetTrigger: 1
+                      ResetTime: 100
+                TriggerScheduleMappingVO:
+                  - SessionScheduleID: 1
+                    TriggerID: 1
+                LogicVO:
+                  - LogicID: 1
+                    LogicFor: 1
+                    LogicType: 1
+                    LogicFlag: 1
+                LogicBlockMappingVO:
+                  - BlockID: 1
+                    LogicID: 1
+                LogicQuestionMappingVO:
+                  - QuestionID: 1
+                    LogicID: 1
+                LogicTriggerMappingVO:
+                  - TriggerID: 1
+                    LogicID: 1
+                LogicConditionVO:
+                  - LogicID: 1
+                    LogicConditionID: 1
+                    LogicFlag: 1
+                LogicStatementVO:
+                  - LogicConditionID: 1
+                    LogicStatementID: 1
+                    ConditionOn: 1
+                    StatementLogic: 1
+                    StatementValue: 12A32
+                    ResponseSelection: 0
+                    NumberOfSessionInstance: 5
+                LogicStatementQuestionMappingVO:
+                  - LogicStatementID: 1
+                    QuestionID: 1
+                LogicStatementScoreMappingVO:
+                  - LogicStatementID: 1
+                    ScoreID: 1
+                LogicStatementSessionMappingVO:
+                  - LogicStatementID: 1
+                    SessionID: 1
+                ScoreVO:
+                  - BlockID: 1
+                    ScoreID: 1
+                    ScoreType: 1
+                    CalcScoreAllQueAnsweredFlag: 1
+                    MinCunQueAnswered: 1
+                    MissScoreCalcFlag: 1
+                    ApplyToAllFlag: 1
+                ScoreQuestionVO:
+                  - ScoreID: 1
+                    QuestionID: 1
+                    ReverseScoreFlag: 0
+                PipedTextVO:
+                  - PipedTextID: 1
+                    TextFor: 1
+                    ObjectID: 1
+                    TextFrom: 1
+                    ObjectIDFrom: 1
+                    LanguageID: 1
+                    DefaultPipedText: Your Name
+                StudySupportedList: '-1,1,3,5,10'
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+  /mobile-studies/study-list:
+    get:
+      tags:
+        - MobileStudy
+      summary: Get All Studies
+      description: This will return all the studies
+      operationId: get-mobile-studies-study-list-participantid-participantid-timeoffset-timeoff
+      parameters:
+        - name: ParticipantID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: TimeOffSet
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Time offset format +/-HH:MM
+            example: +06:00
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudyListModel'
+              example:
+                - StudyID: 1
+                  OrganizationID: 1
+                  OrgName: LifeData LLC.
+                  Version: 1
+                  FilePath: ''
+                  LanguageID: 1
+                  StudyTitle: Test Study
+                  StudyWelcomeHeading: Test Study
+                  StudyIntroMessage: Test Study
+                  StudyInstructions: Test Study
+                  AccessMode: 1
+                  RequireAccessCodeFlag: '0'
+                  IsRTL: '0'
+                  ParticipantFlag: 1
+                  ParticipantIdentifierID: 5
+                  PublishModeFlag: '0'
+                  StudySupportedList: '-1,1,3,5,10'
+  /mobile-studies/changePassword:
+    post:
+      tags:
+        - Mobile Participant
+      summary: Change Participant Password
+      description: API to change the password of a mobile participant.
+      operationId: post-mobile-studies-changepassword
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: JSON Object containing the participant current and new password information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                CurrentPassword:
+                  type: string
+                  description: Current password of the participant
+                  example: asdASD123!!
+                NewPassword:
+                  type: string
+                  description: New password to be set for the participant
+                  example: qweQWE456@@
+            example:
+              CurrentPassword: asdASD123!!
+              NewPassword: qweQWE456@@
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: Object
+                properties:
+                  UserEmail:
+                    type: string
+                    example: john.doe@test.com
+                  Password:
+                    type: string
+                    example: d3j4v4@f5ff8
+                  ParticipantID:
+                    type: string
+                    example: '1'
+              examples:
+                default:
+                  value: 
+components:
+  schemas:
+    StudyListModel:
+      type: object
+      properties:
+        StudyID:
+          type: integer
+          example: 1
+        OrganizationID:
+          type: integer
+          example: 1
+        OrgName:
+          type: string
+          description: Maximum length 127
+          example: LifeData LLC.
+        Version:
+          type: integer
+          example: 1
+        FilePath:
+          type: string
+          example: ''
+        LanguageID:
+          type: integer
+          example: 1
+        StudyTitle:
+          type: string
+          description: Maximum length 127
+          example: Test Study
+        StudyWelcomeHeading:
+          type: string
+          example: Test Study
+        StudyIntroMessage:
+          type: string
+          example: Test Study
+        StudyInstructions:
+          type: string
+          example: Test Study
+        AccessMode:
+          enum:
+            - 1
+            - 2
+            - 3
+          type: integer
+          description: '1 = Public, 2 = Private, 3 = Semi-Private'
+          example: 1
+        RequireAccessCodeFlag:
+          enum:
+            - '1'
+            - '0'
+          type: boolean
+          description: '1 = Yes, 0 = No'
+          example: '0'
+        IsRTL:
+          enum:
+            - '1'
+            - '0'
+          type: boolean
+          description: '1 = Right-to-Left language, 0 = Left-to-Right language'
+          example: '0'
+        ParticipantFlag:
+          enum:
+            - 0
+            - 1
+          type: integer
+          description: '1 = Registered account, 0 = Anonymous participant'
+          example: 1
+        ParticipantIdentifierID:
+          type: integer
+          example: 5
+        PublishModeFlag:
+          enum:
+            - '1'
+            - '0'
+          type: boolean
+          description: '1 = Distribute to Participants, 0 = Test'
+          example: '0'
+        StudySupportedList:
+          type: string
+          description: Comma separated ids and positive ids indicate the question type and negative ids indicate feature
+          example: '-1,1,3,5,10'
+    StudyModel:
+      required:
+        - StudyVO
+        - SessionVO
+        - SessionScheduleVO
+        - BlockVO
+        - QuestionVO
+      type: object
+      properties:
+        StudyVO:
+          $ref: '#/components/schemas/StudyVO'
+        ResponseStatForNISVO:
+          $ref: '#/components/schemas/ResponseStatForNISVO'
+        ResponseStatForCheckInVO:
+          $ref: '#/components/schemas/ResponseStatForCheckInVO'
+        ContactVO:
+          $ref: '#/components/schemas/ContactVO'
+        SessionVO:
+          $ref: '#/components/schemas/SessionVO'
+        BlockVO:
+          $ref: '#/components/schemas/BlockVO'
+        QuestionVO:
+          $ref: '#/components/schemas/QuestionVO'
+        QuestionOptionVO:
+          $ref: '#/components/schemas/QuestionOptionVO'
+        SessionScheduleVO:
+          $ref: '#/components/schemas/SessionScheduleVO'
+        TriggerVO:
+          $ref: '#/components/schemas/TriggerVO'
+        TriggerScheduleMappingVO:
+          $ref: '#/components/schemas/TriggerScheduleMappingVO'
+        LogicVO:
+          $ref: '#/components/schemas/LogicVO'
+        LogicBlockMappingVO:
+          $ref: '#/components/schemas/LogicBlockMappingVO'
+        LogicQuestionMappingVO:
+          $ref: '#/components/schemas/LogicQuestionMappingVO'
+        LogicTriggerMappingVO:
+          $ref: '#/components/schemas/LogicTriggerMappingVO'
+        LogicConditionVO:
+          $ref: '#/components/schemas/LogicConditionVO'
+        LogicStatementVO:
+          $ref: '#/components/schemas/LogicStatementVO'
+        LogicStatementQuestionMappingVO:
+          $ref: '#/components/schemas/LogicStatementOnQuestionVO'
+        LogicStatementScoreMappingVO:
+          $ref: '#/components/schemas/LogicStatementOnScoreVO'
+        LogicStatementSessionMappingVO:
+          $ref: '#/components/schemas/LogicStatementOnSessionVO'
+        ScoreVO:
+          $ref: '#/components/schemas/ScoreVO'
+        ScoreQuestionVO:
+          $ref: '#/components/schemas/ScoreQuestionVO'
+        PipedTextVO:
+          $ref: '#/components/schemas/PipedTextVO'
+        StudySupportedList:
+          type: string
+          description: Comma separated ids and positive ids indicate the question type and negative ids indicate feature
+          example: '-1,1,3,5,10'
+    StudyVO:
+      required:
+        - OrganizationID
+        - StudyID
+        - Version
+        - GatherGeolocationFlag
+        - IdleTimeoutPeriod
+        - StartDayOfWeek
+        - YokeEnabledFlag
+        - DefineCompletedSessionFlag
+        - PublishModeFlag
+        - ParticipantFlag
+        - LevelOfAuthentication
+        - BiometricFlag
+        - SingleStudyFlag
+        - AccessMode
+        - StudyDownloadSeqNum
+        - LanguageID
+        - StudyTitle
+      type: object
+      properties:
+        OrganizationID:
+          type: integer
+          example: 1
+        StudyID:
+          type: integer
+          example: 1
+        Version:
+          type: integer
+          example: 1
+        FilePath:
+          type: string
+          example: ''
+        GatherGeolocationFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          example: 0
+        IdleTimeoutPeriod:
+          maximum: 20.0
+          minimum: 0.0
+          type: integer
+          example: 0
+        StartDayOfWeek:
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+            - 7
+          type: integer
+          description: '1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday, 7 = Sunday'
+          example: 1
+        YokeEnabledFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          example: 0
+        DefineCompletedSessionFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          example: 0
+        PublishModeFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: '1 = Distribute to Participants, 0 = Test'
+          example: 0
+        ParticipantFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: '1 = Registered account, 0 = Anonymous participant'
+          example: 0
+        LevelOfAuthentication:
+          enum:
+            - 1
+            - 2
+            - 3
+          type: integer
+          description: '1 = Always Logged In, 2 = PIN Required, 3 = Login Required'
+          example: 1
+        BiometricFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: '1 = Yes, 0 = No'
+          example: 0
+        SingleStudyFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: '1 = Yes, 0 = No'
+          example: 0
+        AccessMode:
+          enum:
+            - 1
+            - 2
+            - 3
+          type: integer
+          description: '1 = Public, 2 = Private, 3 = Semi-Private'
+          example: 1
+        StudyDownloadSeqNum:
+          type: integer
+          example: 1
+        LanguageID:
+          type: integer
+          example: 1
+        StudyTitle:
+          type: string
+          example: Test Study
+        StudyWelcomeHeading:
+          type: string
+          example: Test Welcome Heading
+        StudyIntroMessage:
+          type: string
+          example: Test Intro Message
+        StudyInstructions:
+          type: string
+          example: Test Study Instructions
+        ContactInstructions:
+          type: string
+          description: This will contain the Study Contact Instruction
+          example: Test Study Contact Instruction
+    ResponseStatForNISVO:
+      required:
+        - ConsiderSkipsFlag
+        - ShowOverallNotificationResponseRateFlag
+        - ShowIndividualNotificationResponseRateFlag
+      type: object
+      properties:
+        ConsiderSkipsFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: 'if this enabled, then when a mobile user skips a response (chooses “I prefer not to answer”) the skip will be counted the same as if a response had been given to that question.'
+          example: 0
+        PercentageOfQuestionsNeedToBeResponded:
+          maximum: 100.0
+          minimum: 0.0
+          type: number
+          description: 'if this enabled, then when a mobile user skips a response (chooses “I prefer not to answer”) the skip will be counted the same as if a response had been given to that question.'
+          example: 25
+        ShowOverallNotificationResponseRateFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          example: 0
+        ShowIndividualNotificationResponseRateFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: 'This field only shows if the study creator has enabled the overall notifiication sessions response rate (above) to show. If the Study Creator chooses “yes” for this field, then the response rate for each notification session will show separately in the mobile app (along with the overall response rate).'
+          example: 0
+    ResponseStatForCheckInVO:
+      required:
+        - ConsiderSkipsFlag
+        - ShowOverallCheckInResponseRateFlag
+        - ShowIndividualCheckInResponseRateFlag
+      type: object
+      properties:
+        ConsiderSkipsFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: 'if this enabled, then when a mobile user skips a response (chooses “I prefer not to answer”) the skip will be counted the same as if a response had been given to that question.'
+          example: 0
+        PercentageOfQuestionsNeedToBeResponded:
+          maximum: 100.0
+          minimum: 0.0
+          type: number
+          description: 'if this enabled, then when a mobile user skips a response (chooses “I prefer not to answer”) the skip will be counted the same as if a response had been given to that question.'
+          example: 25
+        ShowOverallCheckInResponseRateFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          example: 0
+        ShowIndividualCheckInResponseRateFlag:
+          enum:
+            - 1
+            - 0
+          type: integer
+          description: 'This field only shows if the study creator has enabled the overall notifiication sessions response rate (above) to show. If the Study Creator chooses “yes” for this field, then the response rate for each notification session will show separately in the mobile app (along with the overall response rate).'
+          example: 0
+    ContactVO:
+      required:
+        - FullName
+        - ContactEmail
+      type: object
+      properties:
+        FullName:
+          type: string
+          description: Maximum length 127
+          example: Amalesh Debnath
+        ContactTitle:
+          type: string
+          description: Maximum length 127
+          example: LifeData Admin
+        Phone:
+          type: string
+          description: Maximum length 30
+          example: +880-1612625374
+        ContactEmail:
+          type: string
+          description: Maximum length 320
+          example: amalesh.debnath@lifedatacorp.com
+        Address:
+          type: string
+          description: Maximum length 511
+          example: 'Dhaka, Bangladesh'
+    SessionVO:
+      type: array
+      items:
+        required:
+          - StudyID
+          - SessionID
+          - SessionType
+          - SessionOrder
+          - ReminderEnabledFlag
+          - SessionTitle
+        type: object
+        properties:
+          StudyID:
+            type: integer
+            example: 1
+          SessionID:
+            type: integer
+            example: 1
+          SessionType:
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+            type: integer
+            description: '1 = Start-Up Session, 2 = Check-In Session, 3 = Notification Session, 4 = Closeout Session'
+            example: 1
+          SessionOrder:
+            type: integer
+            example: 1
+          BlockOrderFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Random, 0 = Fixed'
+            example: 1
+          ReminderEnabledFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Yes, 0 = No'
+            example: 1
+          SessionTitle:
+            type: string
+            example: Test Check-in Session
+          SessionBriefInstruction:
+            type: string
+            example: Test Instruction
+          SessionInstruction:
+            type: string
+            example: Session Instruction
+    BlockVO:
+      type: array
+      items:
+        required:
+          - SessionID
+          - BlockID
+          - BlockOrder
+          - OrderFlag
+          - NumberOfQuestionPerSession
+          - QuestionOrderFlag
+          - IsSinglePage
+        type: object
+        properties:
+          SessionID:
+            type: integer
+            example: 1
+          BlockID:
+            type: integer
+            example: 1
+          BlockOrder:
+            type: integer
+            example: 1
+          OrderFlag:
+            enum:
+              - 1
+              - 0
+            type: integer
+            description: '0 = Fixed, 1 = Random'
+            example: 0
+          NumberOfQuestionPerSession:
+            type: integer
+            example: 1
+          QuestionOrderFlag:
+            enum:
+              - 0
+              - 1
+              - 2
+            type: integer
+            description: "&nbsp;&nbsp;0 = Sequential<br>\n&nbsp;&nbsp;1 = Random<br>\n&nbsp;&nbsp;2 = Random without Repeat\n"
+            example: 1
+          IsSinglePage:
+            enum:
+              - 1
+              - 0
+            type: integer
+            description: '0 = No, 1 = Yes'
+            example: 0
+    QuestionVO:
+      type: array
+      items:
+        required:
+          - BlockID
+          - QuestionID
+          - QuestionType
+          - QuestionOrder
+          - RequireResponseFlag
+          - BackDisabledFlag
+          - QuestionText
+        type: object
+        properties:
+          BlockID:
+            type: integer
+            example: 1
+          QuestionID:
+            type: integer
+            example: 1
+          QuestionType:
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+              - 7
+              - 8
+              - 9
+              - 10
+              - 11
+              - 12
+              - 13
+              - 14
+              - 15
+            type: integer
+            description: "1 = RANGE SLIDER<br> 2 = FREE TEXT ENTRY<br> 3 = NUMERIC ENTRY<br> 4 = MULTIPLE CHOICE<br> 5 = NUMBER WHEEL<br> 6 = DATE & TIME<br> 7 = AMOUNT OF TIME<br> 8 = RATING SCALE<br> 9 = TEXT STATEMENT<br> 10 = IMAGE<br> 11 = WEB PAGE<br> 12 = MULTI SELECT<br> 13 = CONSENT<br> 14 = PICTURE RESPONSE<br> 15 = PERSONAL IDENTIFIER\n"
+            example: 1
+          QuestionOrder:
+            type: integer
+            example: 1
+          RequireResponseFlag:
+            enum:
+              - '1'
+              - '0'
+            type: boolean
+            example: '0'
+          BackDisabledFlag:
+            enum:
+              - '1'
+              - '0'
+            type: boolean
+            example: '0'
+          AdditionalData:
+            type: string
+            description: "<b><u>For 1 = RANGE SLIDER</u></b><br>\n&nbsp;&nbsp;RangeType [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Numeric<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Percentage<br>\n&nbsp;&nbsp;SliderStartPosition [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Left<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Right<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Center<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Hide<br>\n&nbsp;&nbsp;ShowNumericFeedback [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Yes<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = No<br>\n&nbsp;&nbsp;ShowCaptionForRange [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Yes<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = No<br>\n&nbsp;&nbsp;RangeSliderViewAs [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Circle<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Bar<br>\n&nbsp;&nbsp;SliderInterval [int]<br>\n&nbsp;&nbsp;MinValue [DECIMAL](13,3)<br>\n&nbsp;&nbsp;MaxValue [DECIMAL](13,3)<br>\n<b><u>For 2 = Free Text Entry</u></b><br>\n&nbsp;&nbsp;EntryType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Alphanumeric<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Number Value<br>\n&nbsp;&nbsp;LimitType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Min<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Max<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Range<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Exact<br>\n&nbsp;&nbsp;LimitMinValue [tinyint]<br>\n&nbsp;&nbsp;LimitMaxValue [tinyint]<br>\n<b><u>For 3 = Numeric Entry</u></b><br>\n&nbsp;&nbsp;EntryType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Alphanumeric<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Number Value<br>\n&nbsp;&nbsp;LimitType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Min<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Max<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Range<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Exact<br>\n&nbsp;&nbsp;LimitMinValue [tinyint]<br>\n&nbsp;&nbsp;LimitMaxValue [tinyint]<br>\n&nbsp;&nbsp;AllowDecimal [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Allow<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Not Allow<br>\n&nbsp;&nbsp;MaxDecimalPlace [tinyint]<br>\n<b><u>For 4 = MULTIPLE CHOICE</u></b><br>\n&nbsp;&nbsp;DisplayType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Radio<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Tappable Bar<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Check Box<br>\n&nbsp;&nbsp;AllowMultipleAnswer [tinyint]<br>\n&nbsp;&nbsp;RandomizeResponseOption [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Disable<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Enable<br>\n&nbsp;&nbsp;EqualOptionSpacing [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Not Equal<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Equal<br>\n&nbsp;&nbsp;TotalNumberOfResponse [int]<br>\n<b><u>For 5 = NUMBER WHEEL</u></b><br>\n&nbsp;&nbsp;MinValue [DECIMAL](13,3)<br>\n&nbsp;&nbsp;MaxValue [DECIMAL](13,3)<br>\n<b><u>For 6 = DATE & TIME</u></b><br>\n&nbsp;&nbsp;DateTimeRecordType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Date & Time<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Time<br>\n&nbsp;&nbsp;DateTimeFormatDate [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = mm/dd/yyyy<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = dd/mm/yyyy<br>\n&nbsp;&nbsp;DateTimeFormatTime [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = 24 Hour clock<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = 12 Hour clock<br>\n&nbsp;&nbsp;DateTimeLimitFlag [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = No<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Yes<br>\n&nbsp;&nbsp;DateMinValue [date]<br>\n&nbsp;&nbsp;DateMaxValue [date]<br>\n&nbsp;&nbsp;TimeMinValue [time]<br>\n&nbsp;&nbsp;TimeMaxValue [time]<br>\n<b><u>For 7 = AMOUNT OF TIME</u></b><br>\n&nbsp;&nbsp;AmountOfTimeRecordType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Hour & Minute<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Hour<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Minute For AT<br>\n&nbsp;&nbsp;ShowTimeText [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Yes<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = No<br>\n&nbsp;&nbsp;HourMinValue [tinyint]<br>\n&nbsp;&nbsp;HourMaxValue [tinyint]<br>\n&nbsp;&nbsp;MinuteMinValue [tinyint]<br>\n&nbsp;&nbsp;MinuteMaxValue [tinyint]<br>\n<b><u>For 8 = RATING SCALE</u></b><br>\n&nbsp;&nbsp;RatingScaleViewAs [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Circle<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Bar<br>\n&nbsp;&nbsp;ShowCaptionForScale [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Show<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Hide<br>\n<b><u>For 10 = IMAGE QUESTION</u></b><br>\n&nbsp;&nbsp;ImagePath [string]<br>\n&nbsp;&nbsp;ImageCaptionPositionFlag [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Above<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Below<br>\n<b><u>For 12 = MULTI SELECT</u></b><br>\n&nbsp;&nbsp;DisplayType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Radio<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Tappable Bar<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Check Box<br>\n&nbsp;&nbsp;AllowMultipleAnswer [tinyint]<br>\n&nbsp;&nbsp;RandomizeResponseOption [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Disable<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Enable<br>\n&nbsp;&nbsp;EqualOptionSpacing [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Not Equal<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Equal<br>\n&nbsp;&nbsp;TotalNumberOfResponse [bit]<br>\n&nbsp;&nbsp;MinimumResponseRequired [smallint]<br>\n&nbsp;&nbsp;MaximumResponseAllowed [smallint]<br>\n<b><u>For 13 = Consent</u></b><br>\n&nbsp;&nbsp;ConsentType [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Regular<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = GDPR<br>\n&nbsp;&nbsp;RequestParticipantName [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Yes<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = No<br>\n<b><u>For 14 = PICTURE RESPONSE</u></b><br>\n&nbsp;&nbsp;PhotoSource [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Both<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Real Time<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Gallery<br>\n&nbsp;&nbsp;MinPhotoResponse [tinyint]<br>\n&nbsp;&nbsp;MaxPhotoResponse [tinyint]<br>\n<b><u>For 15 = Personal Identifier</u></b><br>\n&nbsp;&nbsp;EntryType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Alphanumeric<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Number Value<br>\n&nbsp;&nbsp;LimitType [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Min<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Max<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Range<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Exact<br>\n&nbsp;&nbsp;LimitMinValue [tinyint]<br>\n&nbsp;&nbsp;LimitMaxValue [tinyint]<br>\n"
+          QuestionText:
+            type: string
+            example: Test Question
+          QuestionAdditionalData:
+            type: string
+            description: "<b><u>For 1 = RANGE SLIDER</u></b><br>\n&nbsp;&nbsp;MinValueCaption [nvarchar](256)<br>\n&nbsp;&nbsp;MaxValueCaption [nvarchar](256)<br>\n<b><u>For 2 = Free Text Entry</u></b><br>\n&nbsp;&nbsp;PlaceholderText [nvarchar](256)<br>\n<b><u>For 3 = Numeric Entry</u></b><br>\n&nbsp;&nbsp;PlaceholderText [nvarchar](256)<br>\n<b><u>For 10 = Image Question</u></b><br>\n&nbsp;&nbsp;ImageCaptionText [nvarchar](256)<br>\n<b><u>For 12 = MULTI SELECT</u></b><br>\n&nbsp;&nbsp;MultiResponseInstruction [nvarchar](512)<br>\n<b><u>For 13 = Consent</u></b><br>\nConsentBody [nvarchar](max)<br>\nRequestParticipantNameLabel [nvarchar](500)<br>\nAcknowledgmentLabel [nvarchar](500)<br>\n<b><u>For 15 = PERSONAL IDENTIFIER</u></b><br>\n&nbsp;&nbsp;PlaceholderText [nvarchar](256)<br>\n"
+    QuestionOptionVO:
+      type: array
+      items:
+        required:
+          - QuestionID
+          - QuestionOptionID
+          - OptionOrder
+          - Value
+        type: object
+        properties:
+          QuestionID:
+            type: integer
+            example: 1
+          QuestionOptionID:
+            type: integer
+            example: 1
+          OptionOrder:
+            type: integer
+            example: 1
+          Value:
+            type: number
+            example: 1
+          Caption:
+            type: string
+            example: good
+    SessionScheduleVO:
+      type: array
+      items:
+        required:
+          - SessionID
+          - SessionScheduleID
+          - ScheduleFlag
+          - StartImmediately
+          - StopWithStudyEnd
+          - PauseWithTrigger
+          - DeactivateWithTrigger
+        type: object
+        properties:
+          SessionID:
+            type: integer
+            example: 1
+          SessionScheduleID:
+            type: integer
+            example: 1
+          ScheduleFlag:
+            enum:
+              - 1
+              - 2
+              - 3
+            type: integer
+            description: '1 = Regular, 2 = Standard Trigger, 3 = Timed Trigger'
+            example: 1
+          StartImmediately:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Standard, 0 = Trigger'
+            example: 0
+          StopWithStudyEnd:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Standard, 0 = Trigger'
+            example: 0
+          NotificationTimeType:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Fixed, 0 = Random'
+            example: 0
+          ScheduleTiming:
+            type: string
+            description: "&nbsp;&nbsp;[ScheduleToStart] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;1 = On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;2 = On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;3 = On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;4 = On a specific date<br>\n&nbsp;&nbsp;[StartOn] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;For On a specific day of the week value will be as below<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday<br>\n&nbsp;&nbsp;&nbsp;For On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Day<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = First<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Second<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Third<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Fourth<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Last<br>\n&nbsp;&nbsp;[StartOnDate] [date]<br>\n&nbsp;&nbsp;&nbsp;This will be configured for \"On a specific date\" only<br>\n&nbsp;&nbsp;[StartOnDay] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;This will be configured for \"On a specific day of the month\" only<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Weekday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;-1 = Weekend<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday<br>\n&nbsp;&nbsp;[ScheduleToEnd] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;1 = On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;2 = On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;3 = On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;4 = On a specific date<br>\n&nbsp;&nbsp;[EndOn] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;For On a specific day of the week value will be as below<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday<br>\n&nbsp;&nbsp;&nbsp;For On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Day<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = First<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Second<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Third<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Fourth<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Last<br>\n&nbsp;&nbsp;[EndOnDate] [date]<br>\n&nbsp;&nbsp;&nbsp;This will be configured for \"On a specific date\" only<br>\n&nbsp;&nbsp;[EndOnDay] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;This will be configured for \"On a specific day of the month\" only<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = Weekday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;-1 = Weekend<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday\n<br><u>Example:</u><br>\n<u>Regular & Standard Trigger Schedule</u><br>\n&nbsp;&nbsp;Condition 1: StartImmediately = 1, StopWithStudyEnd = 1<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Value=''<br>\n&nbsp;&nbsp;Condition 2: StartImmediately = 0, StopWithStudyEnd = 1<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.1: ScheduleToStart = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.2: ScheduleToStart = 2    -- On a specific day of the week\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":6}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.3: ScheduleToStart = 3    -- On a specific day of the month\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":21}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.4: ScheduleToStart = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOnDate\":'2023-12-15'}<br>\n\n&nbsp;&nbsp;Condition 3: StartImmediately = 1, StopWithStudyEnd = 0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.1: ScheduleToEnd = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToEnd\":1, \"EndOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.2: ScheduleToEnd = 2    -- On a specific day of the week\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToEnd\":2, \"EndOn\":6}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.3: ScheduleToEnd = 3    -- On a specific day of the month\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToEnd\":3, \"EndOn\":21}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.4: ScheduleToEnd = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToEnd\":4, \"EndOnDate\":'2023-12-15'}<br>\n\n&nbsp;&nbsp;Condition 4: StartImmediately = 0, StopWithStudyEnd = 0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.1:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":2, \"ScheduleToEnd\":1, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.2:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":2, \"ScheduleToEnd\":2, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.3:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":2, \"ScheduleToEnd\":3, \"EndOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.4:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":1, \"StartOn\":2, \"ScheduleToEnd\":4, \"EndOnDate\":'2023-12-25'}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.5:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":2, \"StartOn\":2, \"ScheduleToEnd\":1, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.6:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":2, \"StartOn\":2, \"ScheduleToEnd\":2, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.7:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":2, \"StartOn\":2, \"ScheduleToEnd\":3, \"EndOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.8:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":2, \"StartOn\":2, \"ScheduleToEnd\":4, \"EndOnDate\":'2023-12-25'}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.9:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":3, \"StartOn\":2, \"ScheduleToEnd\":1, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.10:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":3, \"StartOn\":2, \"ScheduleToEnd\":2, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.11:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":3, \"StartOn\":2, \"ScheduleToEnd\":3, \"EndOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.12:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":3, \"StartOn\":2, \"ScheduleToEnd\":4, \"EndOnDate\":'2023-12-25'}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.13:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 1    -- On a specific day of the study<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":4, \"StartOnDate\":'2023-12-15', \"ScheduleToEnd\":1, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.14:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 2    -- On a specific day of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":4, \"StartOnDate\":'2023-12-15', \"ScheduleToEnd\":2, \"EndOn\":5}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.15:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 3    -- On a specific day of the month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":4, \"StartOnDate\":'2023-12-15', \"ScheduleToEnd\":3, \"EndOn\":2}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 4.16:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToStart = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ScheduleToEnd = 4    -- On a specific date<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Value</b>={\"ScheduleToStart\":4, \"StartOnDate\":'2023-12-15', \"ScheduleToEnd\":4, \"EndOnDate\":'2023-12-25'}<br>\n<u>Timed Trigger (CheckIn Session Only)</u><br>\n<br><u>Example:</u><br>\n&nbsp;&nbsp;Value={\"StartOn\":12345, \"EndOn\":23456}<br>\n"
+            example: '{"ScheduleToStart": 1, "StartOn": 1, "ScheduleToEnd": 1, "EndOn": 5}'
+          NotificationTiming:
+            type: string
+            description: "<u>Notification Timing Data for Random Regular and Standard Trigger Schedule</u><br>\n&nbsp;&nbsp;[Sample] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Exact Dates<br>\n&nbsp;&nbsp;[SampleValue] [varchar]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = First<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Second<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Third<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4 = Fourth<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5 = Last<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 to 4<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Exact Dates<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date, Start Time, End Time, Same Day = 0 OR 1<br>\n&nbsp;&nbsp;[WhatDaysForSchedule] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Every Week OR Selected Weeks of the Month OR Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Randomized days of the week<br>\n&nbsp;&nbsp;[WhatDaysForScheduleValue] [varchar](15)<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday<br>\n&nbsp;&nbsp;Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 to 6<br>\n&nbsp;&nbsp;[StartTime] [time]<br>\n&nbsp;&nbsp;[EndTime] [time]<br>\n&nbsp;&nbsp;[NumberOfNotification] [tinyint]<br>\n&nbsp;&nbsp;[TimeBetweenNotification] [smallint]<br>\n<br><u>Example:</u><br>\n&nbsp;&nbsp;Condition 1: Sample = 1             -- Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"StartTime\":'08:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'11:00', \"EndTime\":'13:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;Condition 2: Sample = 2             -- Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;Condition 3: Sample = 3             -- Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n\n&nbsp;&nbsp;Condition 4: Sample = 4             -- Exact Dates<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":4, \"SampleValue\":'2023-12-15', \"NotificationTimes\":[{\"StartTime\":'18:00', \"EndTime\":'10:00', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'14:00', \"EndTime\":'17:00', \"NumberOfNotification\":3, \"TimeBetweenNotification\":15}]}<br>\n<u>Notification Timing Data for Fixed Regular and Standard Trigger Schedule</u><br>\n&nbsp;&nbsp;[Sample] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;4 = Exact Dates<br>\n&nbsp;&nbsp;[SampleValue] [varchar]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = First<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Second<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Third<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4 = Fourth<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5 = Last<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 to 4<br>\n&nbsp;&nbsp;Exact Dates<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Date, Notification Time<br>\n&nbsp;&nbsp;[WhatDaysForSchedule] [tinyint]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Every Week OR Selected Weeks of the Month OR Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Randomized days of the week<br>\n&nbsp;&nbsp;[WhatDaysForScheduleValue] [varchar](15)<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = Monday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Tuesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Wednesday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4 = Thursday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5 = Friday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6 = Saturday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7 = Sunday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 to 6<br>\n&nbsp;&nbsp;[NotificationTime] [time]<br>\n<br><u>Example:</u><br>\n&nbsp;&nbsp;Condition 1: Sample = 1             -- Every Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>  \n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 1.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":1, \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n\n&nbsp;&nbsp;Condition 2: Sample = 2             -- Selected Weeks of the Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":2, \"SampleValue\":'2,4', \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n\n&nbsp;&nbsp;Condition 3: Sample = 3             -- Randomized Weeks with in a Month<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.1: WhatDaysForSchedule = 1             -- Everyday<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":1, \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.2: WhatDaysForSchedule = 2             -- Selected Days of Week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":2, \"WhatDaysForScheduleValue\":'2,5', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 3.3: WhatDaysForSchedule = 3             -- Randomized days of the week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":3, \"SampleValue\":'2', \"WhatDaysForSchedule\":3, \"WhatDaysForScheduleValue\":'3', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n\n&nbsp;&nbsp;Condition 4: Sample = 4             -- Exact Dates<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Value={\"Sample\":4, \"SampleValue\":'2023-12-15', \"NotificationTimes\":[{\"Time\":'10:00'},{\"Time\":'15:00'}]}<br>\n<u>Notification Timing Data for Timed Trigger Random Schedule</u><br>\n<br><u>Example:</u><br>\n&nbsp;&nbsp;Value={\"NotificationTimes\":[{\"StartTime\":'12345', \"EndTime\":'23456', \"NumberOfNotification\":2, \"TimeBetweenNotification\":20}, {\"StartTime\":'34567', \"EndTime\":'45678', \"NumberOfNotification\":3, \"TimeBetweenNotification\":30}]}<br>\n<u>Notification Timing Data for Timed Trigger Fixed Schedule</u><br>\n&nbsp;&nbsp;Value={\"NotificationTimes\":[{\"Time\":'12345'}, {\"Time\":'34567'}]}<br>\n"
+            example:
+              Sample: 1
+              WhatDaysForSchedule: 1
+              StartTime: '2025-12-06'
+              EndTime: '2025-12-06'
+              NumberOfNotification: 2
+              TimeBetweenNotification: 20
+          ResponseWindow:
+            type: integer
+            description: values will be in minutes and 0 for unlimited
+            example: 45
+          PauseWithTrigger:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Standard, 0 = Trigger'
+            example: 0
+          DeactivateWithTrigger:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Standard, 0 = Trigger'
+            example: 0
+          Reminders:
+            type: string
+            description: "<br><u>Example:</u><br>\n&nbsp;&nbsp;Condition 1: Reminder is not Enabled<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Value=''<br>\n&nbsp;&nbsp;Condition 2: Reminder is Enabled<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.1: SessionType = 2      -- Check-In Session<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value=[{\"WeekDays\":\"0\",\"NotificationTime\":\"10:30\"},{\"WeekDays\":\"1,7\",\"NotificationTime\":\"19:45\"}]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.2: SessionType = 3      -- Notification Session<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.1: SpacingType = 1        -- Fixed Spacing<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"SpacingType\":1,\"NumberOfReminders\":2,\"SpaceBetweenReminders\":20}<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Condition 2.2: SpacingType = 2        -- Custom Spacing<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value={\"SpacingType\":2,\"Reminders\":[{\"NumberOfReminders\":2,\"SpaceBetweenReminders\":20},\"NumberOfReminders\":3,\"SpaceBetweenReminders\":10]}<br>\n"
+            example: '[{"WeekDays":"0","NotificationTime":"10:30"}]'
+          RemindOnlyIfNoResponse:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Yes, 0 = No'
+            example: 0
+    TriggerVO:
+      type: array
+      items:
+        required:
+          - SessionID
+          - TriggerID
+          - TriggerForFlag
+          - TriggerActionType
+        type: object
+        properties:
+          SessionID:
+            type: integer
+            example: 1
+          TriggerID:
+            type: integer
+            example: 1
+          TriggerForFlag:
+            enum:
+              - '0'
+              - '1'
+            type: boolean
+            description: '1 = Self, 0 = Yoke'
+            example: '1'
+          TriggerActionType:
+            enum:
+              - 1
+              - 2
+              - 3
+            type: integer
+            description: "&nbsp;&nbsp;1 = Activation<br>\n&nbsp;&nbsp;2 = Pause<br>\n&nbsp;&nbsp;3 = Deactivation<br>\n"
+            example: 1
+          TimingData:
+            type: string
+            description: "<b><u>For TriggerActionType = 2</u></b><br>\n&nbsp;&nbsp;TimingType [int]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Standard Trigger<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Timed Trigger<br>\n&nbsp;&nbsp;TimingScheduleType [int]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = day of trigger<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = day of week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = day of month<br>\n&nbsp;&nbsp;TimingScheduleOn [int]<br>\n&nbsp;&nbsp;TimingTriggerMins [int]<br>\nExample (Standard Trigger):{\"TimingType\":2,\"TimingScheduleType\":1,\"TimingScheduleOn\":5}<br>\nExample (Timed Trigger):{\"TimingType\":3,\"TimingTriggeredMins\":100}<br>\n<br><b><u>For TriggerActionType = 3</u></b><br>\n&nbsp;&nbsp;TimingType [int]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = Standard Trigger<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = Timed Trigger<br>\n&nbsp;&nbsp;TimingScheduleType [int]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = day of trigger<br>\n&nbsp;&nbsp;&nbsp;&nbsp;2 = day of week<br>\n&nbsp;&nbsp;&nbsp;&nbsp;3 = day of month<br>\n&nbsp;&nbsp;TimingScheduleOn [int]<br>\n&nbsp;&nbsp;TimingTriggerMins [int]<br>\nExample (Standard Trigger):{\"TimingType\":2,\"TimingScheduleType\":1,\"TimingScheduleOn\":5}<br>\nExample (Timed Trigger):{\"TimingType\":3,\"TimingTriggeredMins\":100}<br>\n"
+            example:
+              DeactivateMins: 100
+              DeactivatePermanently: 0
+              ResetAfter: 0
+          Settings:
+            type: string
+            description: "<b><u>For TriggerActionType = 1</u></b><br>\n&nbsp;&nbsp;ResetTrigger [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = do not reset<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = reset after resetTime<br>\n&nbsp;&nbsp;ResetTime [int]<br>\nExample:{\"ResetTrigger\":1,\"ResetTime\":100}<br>\n<br><b><u>For TriggerActionType = 2</u></b><br>\n&nbsp;&nbsp;PauseOverrideByResetFlag [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = no override<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = override<br>\n&nbsp;&nbsp;ResumeMins [int]<br>\nExample:{\"PauseOverrideByResetFlag\":1,\"ResumeMins\":100}<br>\n<br><b><u>For TriggerActionType = 3</u></b><br>\n&nbsp;&nbsp;DeactivatePermanently [bit]<br>\n&nbsp;&nbsp;&nbsp;&nbsp;0 = no<br>\n&nbsp;&nbsp;&nbsp;&nbsp;1 = yes<br>\n&nbsp;&nbsp;ResetAfter [int]<br>\nExample:{\"DeactivatePermanently\":1,\"ResetAfter\":7}<br>\n"
+            example:
+              ResetTrigger: 1
+              ResetTime: 100
+    TriggerScheduleMappingVO:
+      type: array
+      items:
+        required:
+          - SessionScheduleID
+          - TriggerID
+        type: object
+        properties:
+          SessionScheduleID:
+            type: integer
+            example: 1
+          TriggerID:
+            type: integer
+            example: 1
+    LogicVO:
+      type: array
+      items:
+        required:
+          - LogicID
+          - LogicFor
+          - LogicType
+          - LogicFlag
+        type: object
+        properties:
+          LogicID:
+            type: integer
+            example: 1
+          LogicFor:
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+            type: integer
+            description: '1 = Block, 2 = Question, 3 = Study Alert, 4 = Trigger'
+            example: 1
+          LogicType:
+            enum:
+              - 1
+              - 2
+              - 3
+            type: integer
+            description: '1 = Always, 2 = Based on Condition, 3 = Probability'
+            example: 1
+          LogicFlag:
+            enum:
+              - 1
+              - 0
+            type: integer
+            description: '1 = OR, 0 = AND'
+            example: 1
+    LogicBlockMappingVO:
+      type: array
+      items:
+        required:
+          - BlockID
+          - LogicID
+        type: object
+        properties:
+          BlockID:
+            type: integer
+            example: 1
+          LogicID:
+            type: integer
+            example: 1
+    LogicQuestionMappingVO:
+      type: array
+      items:
+        required:
+          - QuestionID
+          - LogicID
+        type: object
+        properties:
+          QuestionID:
+            type: integer
+            example: 1
+          LogicID:
+            type: integer
+            example: 1
+    LogicTriggerMappingVO:
+      type: array
+      items:
+        required:
+          - TriggerID
+          - LogicID
+        type: object
+        properties:
+          TriggerID:
+            type: integer
+            example: 1
+          LogicID:
+            type: integer
+            example: 1
+    LogicConditionVO:
+      type: array
+      items:
+        required:
+          - LogicID
+          - LogicConditionID
+          - LogicFlag
+        type: object
+        properties:
+          LogicID:
+            type: integer
+            example: 1
+          LogicConditionID:
+            type: integer
+            example: 1
+          LogicFlag:
+            enum:
+              - 1
+              - 0
+            type: integer
+            description: '1 = OR, 0 = AND'
+            example: 1
+    LogicStatementVO:
+      type: array
+      items:
+        required:
+          - LogicConditionID
+          - LogicStatementID
+          - ConditionOn
+          - StatementLogic
+        type: object
+        properties:
+          LogicConditionID:
+            type: integer
+            example: 1
+          LogicStatementID:
+            type: integer
+            example: 1
+          ConditionOn:
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+            type: integer
+            description: "&nbsp;&nbsp;1 = Question<br>\n&nbsp;&nbsp;2 = Score<br>\n&nbsp;&nbsp;3 = Session<br>\n&nbsp;&nbsp;4 = Probability<br>\n&nbsp;&nbsp;5 = NIS Response Rate<br>\n&nbsp;&nbsp;6 = Check-In Session Count\n"
+            example: 1
+          StatementLogic:
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+              - 7
+              - 8
+            type: integer
+            description: "&nbsp;&nbsp;1 = Is completed / Responded (applies to all Question types)<br>\n&nbsp;&nbsp;2 = Is equal to (Also applies to text entry)<br>\n&nbsp;&nbsp;3 = Is not equal to (Also applies to text entry)<br>\n&nbsp;&nbsp;4 = Is greater than<br>\n&nbsp;&nbsp;5 = Is less than<br>\n&nbsp;&nbsp;6 = Is greater than or equal to<br>\n&nbsp;&nbsp;7 = Is less than or equal to<br>\n&nbsp;&nbsp;8 = Is Complete<br>\n"
+            example: 1
+          StatementValue:
+            type: string
+            example: 12A32
+          ResponseSelection:
+            enum:
+              - 0
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+            type: integer
+            description: "&nbsp;&nbsp;0 = Last<br>\n&nbsp;&nbsp;1 = First<br>\n&nbsp;&nbsp;2 = Average Specific Response<br>\n&nbsp;&nbsp;3 = Average All<br>\n&nbsp;&nbsp;4 = Current Response<br>\n&nbsp;&nbsp;5 = Prior Response\n"
+            example: 0
+          NumberOfSessionInstance:
+            type: integer
+            description: This will indicate how many session instance will be checked
+            example: 5
+    LogicStatementOnQuestionVO:
+      type: array
+      items:
+        required:
+          - LogicStatementID
+          - QuestionID
+        type: object
+        properties:
+          LogicStatementID:
+            type: integer
+            example: 1
+          QuestionID:
+            type: integer
+            example: 1
+    LogicStatementOnScoreVO:
+      type: array
+      items:
+        required:
+          - LogicStatementID
+          - ScoreID
+        type: object
+        properties:
+          LogicStatementID:
+            type: integer
+            example: 1
+          ScoreID:
+            type: integer
+            example: 1
+    LogicStatementOnSessionVO:
+      type: array
+      items:
+        required:
+          - LogicStatementID
+          - SessionID
+        type: object
+        properties:
+          LogicStatementID:
+            type: integer
+            example: 1
+          SessionID:
+            type: integer
+            example: 1
+    ScoreVO:
+      type: array
+      items:
+        required:
+          - BlockID
+          - ScoreID
+          - ScoreType
+          - CalcScoreAllQueAnsweredFlag
+          - MinCunQueAnswered
+          - MissScoreCalcFlag
+          - ApplyToAllFlag
+        type: object
+        properties:
+          BlockID:
+            type: integer
+            example: 1
+          ScoreID:
+            type: integer
+            example: 1
+          ScoreType:
+            enum:
+              - 1
+              - 2
+              - 3
+            type: integer
+            description: "&nbsp;&nbsp;1 = Average<br> &nbsp;&nbsp;2 = Sum<br> &nbsp;&nbsp;3 = Custom<br>\n"
+            example: 1
+          CalcScoreAllQueAnsweredFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Need to answer all question, 0 = Don''t need to answer all question'
+            example: 1
+          MinCunQueAnswered:
+            type: integer
+            description: Minimum number of questions that must be answered
+            example: 1
+          MissScoreCalcFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Mean Substitution, 0 = Exclude missing questions'
+            example: 1
+          ApplyToAllFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Select All, 0 = Custom Selection'
+            example: 1
+    ScoreQuestionVO:
+      type: array
+      items:
+        required:
+          - ScoreID
+          - QuestionID
+          - ReverseScoreFlag
+        type: object
+        properties:
+          ScoreID:
+            type: integer
+            example: 1
+          QuestionID:
+            type: integer
+            example: 1
+          ReverseScoreFlag:
+            enum:
+              - 0
+              - 1
+            type: integer
+            description: '1 = Reverse Score, 0 = Regular Score'
+            example: 0
+    PipedTextVO:
+      type: array
+      items:
+        type: object
+        properties:
+          PipedTextID:
+            type: integer
+            example: 1
+          TextFor:
+            enum:
+              - 1
+              - 2
+            type: integer
+            description: '1 = Question, 2 = Question Option'
+            example: 1
+          ObjectID:
+            type: integer
+            description: Question / Question Option ID
+            example: 1
+          TextFrom:
+            enum:
+              - 1
+              - 2
+            type: integer
+            description: '1 = Question, 2 = Score'
+            example: 1
+          ObjectIDFrom:
+            type: integer
+            description: Question / Score ID
+            example: 1
+          LanguageID:
+            type: integer
+            example: 1
+          DefaultPipedText:
+            type: string
+            description: Piped Text default value
+            example: Your Name
+tags:
+  - name: MobileStudy
+    description: API related to study

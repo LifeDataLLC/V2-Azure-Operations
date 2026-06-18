@@ -1,0 +1,274 @@
+openapi: 3.0.1
+info:
+  title: Blob Storage REST API
+  description: APIM wrapper for accessing the Azure Blob Storage REST API
+  version: '1.0'
+servers:
+  - url: https://api.lifedatacorp.com/blob-service
+paths:
+  /study-content/download:
+    get:
+      tags:
+        - Content
+      summary: Download Study Content
+      description: This action will be used to get image file related to the Study content
+      operationId: get-study-content
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                default:
+                  value: 
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /study-content/upload:
+    put:
+      tags:
+        - Content
+      summary: Upload Study Content
+      description: This endpoint will be used to store image content required by the Study
+      operationId: put-study-content
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            examples:
+              default:
+                value: 
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /study-report/download:
+    get:
+      tags:
+        - Report
+      summary: Download Study Report
+      description: This endpoint will be used to download generated study reports
+      operationId: get-study-report
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                default:
+                  value: 
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /study-report/upload:
+    put:
+      tags:
+        - Report
+      summary: Upload Study Report
+      description: This endpoint will be used to store the generated study report
+      operationId: put-study-report
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            examples:
+              default:
+                value: 
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+  /study-response/download:
+    get:
+      tags:
+        - Response
+      summary: Download Study Response
+      description: This endpoint will be used to download the images submitted by participants as the study response
+      operationId: get-study-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                default:
+                  value: 
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+        '500':
+          description: Internal Server Error
+  /study-response/upload:
+    put:
+      tags:
+        - Response
+      summary: Upload Study Response
+      description: This endpoint will be used to store the image response from participant
+      operationId: put-study-response
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Blob
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Container
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            examples:
+              default:
+                value: 
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request. Check API Spec for correct request Parameters.
+        '401':
+          description: Authorization Token is missing or invalid
+        '500':
+          description: Internal Server Error
+components: { }
+tags:
+  - name: Content
+    description: API related to Study Content Files
+  - name: Report
+    description: API related to Study Report Files
+  - name: Response
+    description: API related to Study Response Files

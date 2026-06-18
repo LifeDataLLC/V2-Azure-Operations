@@ -1,0 +1,79 @@
+openapi: 3.0.1
+info:
+  title: Mobile Notifications REST API
+  description: This API allow mobile users to interact with the LIFEDATA cloud service.
+  termsOfService: https://www.lifedatacorp.com/lifedata-terms-of-use/
+  contact:
+    name: Lifedata Corp
+    url: https://www.lifedatacorp.com/
+    email: info@lifedatacorp.com
+  license:
+    name: Lifedata license
+    url: https://www.lifedatacorp.com/license
+  version: '1.0'
+servers:
+  - url: https://api-staging.lifedatacorp.com/mobile-notification-service
+paths:
+  /push-notification/all-previous-push-notification:
+    get:
+      tags:
+        - PushNotification
+      summary: Get All Previous Push Notifications
+      description: This will return all previous push notifications
+      operationId: get-push-notification-all-previous-push-notification-participantid-participa
+      parameters:
+        - name: ParticipantID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: StudyIDs
+          in: query
+          required: true
+          schema:
+            type: string
+            description: coma separated study ids
+            example: '1,2,3'
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PushNotificationModel'
+              example:
+                - StudyID: 1
+                  OrganizationID: 1
+                  Version: 1
+                  SessionID: 1
+                  SessionScheduleID: 1
+components:
+  schemas:
+    PushNotificationModel:
+      type: object
+      properties:
+        StudyID:
+          type: integer
+          example: 1
+        OrganizationID:
+          type: integer
+          example: 1
+        Version:
+          type: integer
+          example: 1
+        SessionID:
+          type: integer
+          example: 1
+        SessionScheduleID:
+          type: integer
+          example: 1
+tags:
+  - name: PushNotification
+    description: API related to study

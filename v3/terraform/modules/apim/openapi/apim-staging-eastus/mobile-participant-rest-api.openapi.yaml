@@ -1,0 +1,183 @@
+openapi: 3.0.1
+info:
+  title: Mobile Participant REST API
+  description: This API allow mobile users to interact with the LIFEDATA cloud service.
+  termsOfService: https://www.lifedatacorp.com/lifedata-terms-of-use/
+  contact:
+    name: Lifedata Corp
+    url: https://www.lifedatacorp.com/
+    email: info@lifedatacorp.com
+  license:
+    name: Lifedata license
+    url: https://www.lifedatacorp.com/license
+  version: '1.0'
+servers:
+  - url: https://api-staging.lifedatacorp.com/mobile-participant-service
+paths:
+  /mobile-participant/createParticipant:
+    post:
+      tags:
+        - MobileParticipant
+      summary: Create Participant
+      description: 'This will return version, action and extension_participantID'
+      operationId: post-mobile-participant-createparticipant
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParticipantModel'
+              example:
+                - version: 1.0.0
+                  action: Continue
+                  extension_participantID: 1
+  /mobile-participant/createAnonymousParticipant:
+    post:
+      tags:
+        - MobileParticipant
+      summary: Create Anonymous Participant
+      description: 'This will return version, action and extension_participantID'
+      operationId: post-mobile-participant-createanonymousparticipant-participantidentifierid-p
+      parameters:
+        - name: ParticipantIdentifierID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnonymousParticipantModel'
+              example:
+                ParticipantID: 1
+                AnonymousID: 1
+                EmailID: test@lifedatacorp.com
+                Password: random password
+                FullName: random user name
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+  /mobile-participant/changeEmail:
+    put:
+      tags:
+        - MobileParticipant
+      summary: Change Participant Email
+      description: This will return result as boolean
+      operationId: put-mobile-participant-changeemail-participantid-participantid-currentemaili
+      parameters:
+        - name: ParticipantID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: CurrentEmailID
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: NewEmailID
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Update Successfully
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+  /mobile-participant/changePassword:
+    put:
+      tags:
+        - MobileParticipant
+      summary: Change Participant Password
+      description: This will return result as boolean
+      operationId: put-mobile-participant-changepassword-participantid-participantid-currentpas
+      parameters:
+        - name: ParticipantID
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: CurrentPassword
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: NewPassword
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Update Successfully
+        '401':
+          description: Authorization Token is missing or invalid
+        '404':
+          description: Item Not Found
+components:
+  schemas:
+    AnonymousParticipantModel:
+      type: object
+      properties:
+        ParticipantID:
+          type: integer
+          example: 1
+        AnonymousID:
+          type: integer
+          example: 1
+        EmailID:
+          type: string
+          example: test@lifedatacorp.com
+        Password:
+          type: string
+          example: random password
+        FullName:
+          type: string
+          example: random user name
+    ParticipantModel:
+      type: object
+      properties:
+        version:
+          type: string
+          example: 1.0.0
+        action:
+          type: string
+          example: Continue
+        extension_participantID:
+          type: integer
+          description: Newly created participant ID
+          example: 1
+tags:
+  - name: MobileParticipant
+    description: API related to Participant
