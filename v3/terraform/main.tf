@@ -44,13 +44,38 @@ locals {
 # § Scope-shared module calls (deploy once per scope — D-302)
 # ---------------------------------------------------------------------------
 
-# --- networking module call (Plan 03-02) ---
-# module "networking" {
-#   source              = "./modules/networking"
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # vnet + subnet + nsg variables wired by Plan 03-02
-# }
+# --- networking module call (Plan 03-03) ---
+# Scope-shared: ONE call per scope, no for_each (D-302).
+# var.networking is a structured object set per-scope in nonprod.tfvars / prod.tfvars.
+# All inputs are NO-DEFAULT (D-307) — subnet CIDRs/names are connectivity-critical.
+module "networking" {
+  source = "./modules/networking"
+
+  # Scope identity — from the pre-created RG data source (D-311).
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # VNet
+  vnet_name          = var.networking.vnet_name
+  vnet_address_space = var.networking.vnet_address_space
+
+  # Subnets, NSGs, Public IPs, Private DNS zones
+  subnets           = var.networking.subnets
+  nsgs              = var.networking.nsgs
+  public_ips        = var.networking.public_ips
+  private_dns_zones = var.networking.private_dns_zones
+
+  # NAT gateway (prod only — "" on nonprod)
+  nat_gateway_name       = var.networking.nat_gateway_name
+  nat_gateway_pip_key    = var.networking.nat_gateway_pip_key
+  nat_gateway_subnet_key = var.networking.nat_gateway_subnet_key
+
+  # APIM StV2 private endpoint (prod only — "" on nonprod)
+  apim_private_endpoint_name        = var.networking.apim_private_endpoint_name
+  apim_private_endpoint_subnet_key  = var.networking.apim_private_endpoint_subnet_key
+  apim_private_endpoint_resource_id = var.networking.apim_private_endpoint_resource_id
+  apim_private_dns_zone_key         = var.networking.apim_private_dns_zone_key
+}
 # --- end networking module call ---
 
 # --- keyvault module call (Plan 03-05) ---

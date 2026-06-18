@@ -54,8 +54,329 @@ environments = {
 # § networking values (Plan 03-02)
 # ---------------------------------------------------------------------------
 
-# --- networking values (Plan 03-02) ---
-# (Plan 03-02 adds VNet/subnet CIDR and NSG rule values here)
+# --- networking values (Plan 03-03) ---
+# Evidence: data/vnets.json (prod VNet), data/nsgs.json (prod NSGs),
+#           data/public_ips.json (prod PIPs)
+#           terraform/LD-Prod-EastUS-V2/main.tf:1152-1516 (HCL shape)
+#
+# D-302: Mirrors live overlapping 10.0.0.0/16. Per-env CIDR isolation → M3.
+# D-305: hidden-link/App Insights tags on PIPs DROPPED (noise normalization).
+# D-312: Prod values authored now even though prod scope is idle in M1.
+
+networking = {
+  # evidence: vnets.json name="vnet-production-eastus"
+  vnet_name = "vnet-production-eastus"
+  # evidence: vnets.json addressSpace.addressPrefixes=["10.0.0.0/16"]
+  vnet_address_space = ["10.0.0.0/16"]
+
+  subnets = {
+    "default" = {
+      name                              = "default"
+      address_prefix                    = "10.0.1.0/24" # evidence: vnets.json prod subnets[0]
+      service_endpoints                 = []
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Disabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "common" = {
+      name                              = "common-production-eastus-subnet"
+      address_prefix                    = "10.0.2.0/24" # evidence: vnets.json prod subnets[1]
+      service_endpoints                 = []
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "app_service" = {
+      name              = "app-service-production-eastus-subnet"
+      address_prefix    = "10.0.3.0/24" # evidence: vnets.json prod subnets[2]
+      service_endpoints = ["Microsoft.Web"]
+      # evidence: vnets.json delegations[0].serviceName="Microsoft.Web/serverFarms"
+      delegation_name                   = "Microsoft.Web.serverFarms"
+      delegation_service                = "Microsoft.Web/serverFarms"
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "function_app" = {
+      name              = "function-app-production-eastus-subnet"
+      address_prefix    = "10.0.4.0/24" # evidence: vnets.json prod subnets[3]
+      service_endpoints = ["Microsoft.Web"]
+      # evidence: vnets.json delegations[0].serviceName="Microsoft.Web/serverFarms"
+      delegation_name                   = "Microsoft.Web.serverFarms"
+      delegation_service                = "Microsoft.Web/serverFarms"
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "apim" = {
+      # NSG-associated subnet (legacy APIM Developer-SKU + staging APIM internal VNet)
+      # evidence: vnets.json prod subnets[4] name="apim-production-eastus-subnet"
+      #           nsgs.json nsg-production-eastus subnets[0] = apim-production-eastus-subnet
+      name                              = "apim-production-eastus-subnet"
+      address_prefix                    = "10.0.5.0/24"
+      service_endpoints                 = ["Microsoft.KeyVault", "Microsoft.Web"]
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "agw" = {
+      name                              = "agw-production-eastus-subnet"
+      address_prefix                    = "10.0.6.0/24" # evidence: vnets.json prod subnets[5]
+      service_endpoints                 = []
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "keyvault" = {
+      name                              = "kv-production-eastus-subnet"
+      address_prefix                    = "10.0.7.0/24" # evidence: vnets.json prod subnets[6]
+      service_endpoints                 = ["Microsoft.KeyVault"]
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "storage" = {
+      name                              = "storage-production-eastus-subnet"
+      address_prefix                    = "10.0.8.0/24" # evidence: vnets.json prod subnets[7]
+      service_endpoints                 = ["Microsoft.Storage"]
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "sql" = {
+      name                              = "sql-production-eastus-subnet"
+      address_prefix                    = "10.0.9.0/24" # evidence: vnets.json prod subnets[8]
+      service_endpoints                 = ["Microsoft.Sql"]
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "redis" = {
+      # evidence: vnets.json prod subnets redis-production-eastus-subnet (10.0.11.0/24)
+      # Note: service_endpoints=["Microsoft.Sql"] from live export (unusual but faithfully mirrored)
+      name                              = "redis-production-eastus-subnet"
+      address_prefix                    = "10.0.11.0/24"
+      service_endpoints                 = ["Microsoft.Sql"]
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "Enabled"
+      default_outbound_access_enabled   = true
+    }
+
+    "apim_staging_stv2" = {
+      # evidence: vnets.json prod subnets apim-staging-stv2-eastus-subnet (10.0.12.0/24)
+      # Delegation: Microsoft.Web/serverFarms (APIM StV2 outbound)
+      name                              = "apim-staging-stv2-eastus-subnet"
+      address_prefix                    = "10.0.12.0/24"
+      service_endpoints                 = []
+      delegation_name                   = "Microsoft.Web/serverFarms"
+      delegation_service                = "Microsoft.Web/serverFarms"
+      private_endpoint_network_policies = "Disabled"
+      default_outbound_access_enabled   = false # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1360
+    }
+
+    "apim_staging_stv2_inbound" = {
+      # evidence: vnets.json prod subnets apim-staging-stv2-eastus-inbound-subnet (10.0.13.0/24)
+      name                              = "apim-staging-stv2-eastus-inbound-subnet"
+      address_prefix                    = "10.0.13.0/24"
+      service_endpoints                 = []
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "RouteTableEnabled" # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1349
+      default_outbound_access_enabled   = false
+    }
+
+    "apim_stv2_inbound" = {
+      # evidence: vnets.json prod subnets ldapim-prod-stv2-eastus-inbound-subnet (10.0.14.0/24)
+      # Hosts the APIM StV2 private endpoint (pip-prod-stv2-eastus)
+      name                              = "ldapim-prod-stv2-eastus-inbound-subnet"
+      address_prefix                    = "10.0.14.0/24"
+      service_endpoints                 = []
+      delegation_name                   = ""
+      delegation_service                = ""
+      private_endpoint_network_policies = "RouteTableEnabled" # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1445
+      default_outbound_access_enabled   = false
+    }
+
+    "apim_stv2_outbound" = {
+      # evidence: vnets.json prod subnets ldapim-prod-stv2-eastus-outbound-subnet (10.0.15.0/24)
+      # NAT gateway attached; NSG nsg-ldapim-prod-stv2-eastus associated
+      name              = "ldapim-prod-stv2-eastus-outbound-subnet"
+      address_prefix    = "10.0.15.0/24"
+      service_endpoints = ["Microsoft.Storage.Global", "Microsoft.Web"]
+      # evidence: vnets.json delegations[0].serviceName="Microsoft.Web/serverFarms"
+      delegation_name                   = "Microsoft.Web/serverFarms"
+      delegation_service                = "Microsoft.Web/serverFarms"
+      private_endpoint_network_policies = "Disabled" # evidence: vnets.json privateEndpointNetworkPolicies
+      default_outbound_access_enabled   = false      # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1454
+    }
+  }
+
+  nsgs = {
+    "apim_prod" = {
+      # evidence: nsgs.json name="nsg-production-eastus"
+      # Associated with apim-production-eastus-subnet (10.0.5.0/24)
+      name       = "nsg-production-eastus"
+      subnet_key = "apim"
+      security_rules = [
+        {
+          name                       = "AllowAnyHTTPSInbound"
+          priority                   = 100
+          direction                  = "Inbound"
+          access                     = "Allow"
+          protocol                   = "Tcp" # evidence: nsgs.json protocol="TCP" (prod differs from nonprod "*")
+          source_port_range          = "*"
+          destination_port_range     = "3443"
+          destination_port_ranges    = []
+          source_address_prefix      = "ApiManagement"
+          destination_address_prefix = "VirtualNetwork"
+          description                = ""
+        },
+        {
+          name                       = "AppGatewayReqPortsInbound"
+          priority                   = 110
+          direction                  = "Inbound"
+          access                     = "Allow"
+          protocol                   = "Tcp"
+          source_port_range          = "*"
+          destination_port_range     = "65200-65535"
+          destination_port_ranges    = []
+          source_address_prefix      = "GatewayManager"
+          destination_address_prefix = "*"
+          description                = "Azure Application Gateway (both v1 and v2) requires a specific \"Infrastructure Port Range\" to be open for the GatewayManager service tag. "
+        },
+        {
+          name                       = "AlloweAnyFromAppGateway"
+          priority                   = 120
+          direction                  = "Inbound"
+          access                     = "Allow"
+          protocol                   = "Tcp"
+          source_port_range          = "*"
+          destination_port_range     = "" # uses destination_port_ranges instead
+          destination_port_ranges    = ["3443", "443"]
+          source_address_prefix      = "10.0.6.0/24" # AGW subnet prefix (evidence: nsgs.json)
+          destination_address_prefix = "*"
+          description                = "You must tell the APIM subnet to \"open the door\" when the Application Gateway knocks."
+        },
+        {
+          name                       = "AllowApplicationManagementControlPlaneInBound"
+          priority                   = 130
+          direction                  = "Inbound"
+          access                     = "Allow"
+          protocol                   = "Tcp"
+          source_port_range          = "*"
+          destination_port_range     = "3443"
+          destination_port_ranges    = []
+          source_address_prefix      = "ApiManagement"
+          destination_address_prefix = "*"
+          description                = ""
+        },
+        {
+          name                       = "AllowAllToAPIM"
+          priority                   = 130
+          direction                  = "Outbound"
+          access                     = "Allow"
+          protocol                   = "Tcp"
+          source_port_range          = "*"
+          destination_port_range     = "443"
+          destination_port_ranges    = []
+          source_address_prefix      = "*"
+          destination_address_prefix = "10.0.5.0/24" # APIM subnet (evidence: nsgs.json)
+          description                = "Since you mentioned you have a \"Deny All\" rule in both directions, the Gateway is likely being prevented from \"reaching out\" to the APIM."
+        }
+      ]
+    }
+
+    "apim_stv2_outbound" = {
+      # evidence: nsgs.json name="nsg-ldapim-prod-stv2-eastus"
+      # Associated with ldapim-prod-stv2-eastus-outbound-subnet; no custom rules
+      name           = "nsg-ldapim-prod-stv2-eastus"
+      subnet_key     = "apim_stv2_outbound"
+      security_rules = []
+    }
+  }
+
+  public_ips = {
+    "nat_stv2" = {
+      # evidence: public_ips.json name="pip-nat-ldapim-prod-stv2-eastus"
+      # Attached to natgw-prod-stv2-eastus (no App Insights link tags in live)
+      name                    = "pip-nat-ldapim-prod-stv2-eastus"
+      allocation_method       = "Static"
+      sku                     = "Standard"
+      idle_timeout_in_minutes = 4
+      zones                   = []
+      domain_name_label       = ""
+    }
+    "agw_prod" = {
+      # evidence: public_ips.json name="pip-prod-eastus"
+      # D-305: hidden-link tag DROPPED
+      name                    = "pip-prod-eastus"
+      allocation_method       = "Static"
+      sku                     = "Standard"
+      idle_timeout_in_minutes = 4
+      zones                   = []
+      domain_name_label       = ""
+    }
+    "apim_staging_stv2" = {
+      # evidence: public_ips.json name="pip-stage-eastus"
+      # Has zone pinning [1,2,3] and domain_name_label; no App Insights link tags
+      name                    = "pip-stage-eastus"
+      allocation_method       = "Static"
+      sku                     = "Standard"
+      idle_timeout_in_minutes = 20 # evidence: public_ips.json idleTimeoutInMinutes=20
+      zones                   = ["1", "2", "3"]
+      domain_name_label       = "pipstageeastus" # evidence: public_ips.json dnsSettings.domainNameLabel
+    }
+    "agw_staging" = {
+      # evidence: public_ips.json name="pip-staging-eastus"
+      # D-305: hidden-link tag DROPPED
+      name                    = "pip-staging-eastus"
+      allocation_method       = "Static"
+      sku                     = "Standard"
+      idle_timeout_in_minutes = 4
+      zones                   = []
+      domain_name_label       = ""
+    }
+  }
+
+  private_dns_zones = {
+    "apim_stv2" = {
+      # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1254-1265
+      zone_name = "privatelink.azure-api.net"
+      link_name = "privatelink.azure-api.net-link"
+    }
+  }
+
+  # NAT gateway — prod has natgw-prod-stv2-eastus
+  # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1152-1160; public_ips.json pip-nat-*
+  nat_gateway_name       = "natgw-prod-stv2-eastus"
+  nat_gateway_pip_key    = "nat_stv2"           # → public_ips["nat_stv2"]
+  nat_gateway_subnet_key = "apim_stv2_outbound" # → subnets["apim_stv2_outbound"]
+
+  # APIM StV2 private endpoint — prod: pip-prod-stv2-eastus
+  # evidence: terraform/LD-Prod-EastUS-V2/main.tf:1267-1282
+  # apim_private_endpoint_resource_id: wired by Plan 03-07 (module.apim.stv2_service_id);
+  # set to "" here as a placeholder — validate will pass; plan will fail until 03-07 wires it.
+  apim_private_endpoint_name        = "pip-prod-stv2-eastus"
+  apim_private_endpoint_subnet_key  = "apim_stv2_inbound"
+  apim_private_endpoint_resource_id = "" # TODO(03-07): wire module.apim.stv2_service_id here
+  apim_private_dns_zone_key         = "apim_stv2"
+}
+
 # --- end networking values ---
 
 # ---------------------------------------------------------------------------

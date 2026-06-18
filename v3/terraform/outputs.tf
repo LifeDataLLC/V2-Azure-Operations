@@ -32,11 +32,43 @@ output "enabled_environments" {
 # § Module output placeholders — filled in by each module plan
 # ---------------------------------------------------------------------------
 
-# --- networking outputs (Plan 03-02) ---
-# output "vnet_id"          { ... }
-# output "sql_subnet_id"    { ... }
-# output "app_subnet_id"    { ... }
-# output "apim_subnet_id"   { ... }
+# --- networking outputs (Plan 03-03) ---
+
+output "vnet_id" {
+  description = "Resource ID of the scope's VNet (from module.networking)."
+  value       = module.networking.vnet_id
+}
+
+output "sql_subnet_id" {
+  description = "Subnet ID for SQL service endpoints (from module.networking)."
+  value       = module.networking.sql_subnet_id
+}
+
+output "storage_subnet_id" {
+  description = "Subnet ID for Storage service endpoints (from module.networking)."
+  value       = module.networking.storage_subnet_id
+}
+
+output "keyvault_subnet_id" {
+  description = "Subnet ID for Key Vault service endpoints (from module.networking)."
+  value       = module.networking.keyvault_subnet_id
+}
+
+output "app_subnet_id" {
+  description = "Subnet ID for App Service VNet integration (from module.networking)."
+  value       = module.networking.app_subnet_id
+}
+
+output "function_app_subnet_id" {
+  description = "Subnet ID for Function App VNet integration (from module.networking)."
+  value       = module.networking.function_app_subnet_id
+}
+
+output "apim_subnet_id" {
+  description = "Subnet ID for APIM VNet integration (from module.networking)."
+  value       = module.networking.apim_subnet_id
+}
+
 # --- end networking outputs ---
 
 # --- keyvault outputs (Plan 03-05) ---

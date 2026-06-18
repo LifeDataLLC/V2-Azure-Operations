@@ -86,8 +86,87 @@ variable "environments" {
 # § networking module variables (Plan 03-02)
 # ---------------------------------------------------------------------------
 
-# --- networking posture vars (Plan 03-02) ---
-# (Module plan 03-02 adds VNet/subnet/NSG variables here)
+# --- networking posture vars (Plan 03-03) ---
+
+variable "networking" {
+  description = <<-EOT
+    Networking configuration object for the scope's VNet, subnets, NSGs, public IPs,
+    private DNS zones, and prod-only NAT gateway / APIM private endpoint.
+
+    Passed directly to the networking module (module "networking"). Every field maps
+    1:1 to a module variable — see modules/networking/variables.tf for per-field
+    evidence citations.
+
+    NO DEFAULT (D-307) — VNet/subnet shape is connectivity-critical and differs
+    between scopes (vnet_name, subnet names). Values are set explicitly in
+    nonprod.tfvars (vnet-common-nonproduction-eastus) and prod.tfvars
+    (vnet-production-eastus) with evidence from data/vnets.json.
+  EOT
+  type = object({
+    vnet_name          = string
+    vnet_address_space = list(string)
+
+    # Subnet map — key = logical role (sql, storage, keyvault, app_service, function_app,
+    # apim, agw, and any scope-specific subnets).
+    subnets = map(object({
+      name                              = string
+      address_prefix                    = string
+      service_endpoints                 = list(string)
+      delegation_name                   = string
+      delegation_service                = string
+      private_endpoint_network_policies = string
+      default_outbound_access_enabled   = bool
+    }))
+
+    # NSG map — key = logical NSG role (apim, stv2_outbound, ...).
+    nsgs = map(object({
+      name       = string
+      subnet_key = string
+      security_rules = list(object({
+        name                       = string
+        priority                   = number
+        direction                  = string
+        access                     = string
+        protocol                   = string
+        source_port_range          = string
+        destination_port_range     = string
+        destination_port_ranges    = list(string)
+        source_address_prefix      = string
+        destination_address_prefix = string
+        description                = string
+      }))
+    }))
+
+    # Public IP map — key = logical role (agw_common, nat_stv2, ...).
+    public_ips = map(object({
+      name                    = string
+      allocation_method       = string
+      sku                     = string
+      idle_timeout_in_minutes = number
+      zones                   = list(string)
+      domain_name_label       = string
+    }))
+
+    # Private DNS zone map — key = logical role (redis, apim_stv2, ...).
+    private_dns_zones = map(object({
+      zone_name = string
+      link_name = string
+    }))
+
+    # NAT gateway (prod only — set to "" on nonprod).
+    nat_gateway_name       = string
+    nat_gateway_pip_key    = string
+    nat_gateway_subnet_key = string
+
+    # APIM StV2 private endpoint (prod only — set to "" on nonprod).
+    apim_private_endpoint_name        = string
+    apim_private_endpoint_subnet_key  = string
+    apim_private_endpoint_resource_id = string
+    apim_private_dns_zone_key         = string
+  })
+  # NO default — fails fast at plan time if not set in tfvars (D-307).
+}
+
 # --- end networking posture vars ---
 
 # ---------------------------------------------------------------------------
