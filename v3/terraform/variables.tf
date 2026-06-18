@@ -503,17 +503,372 @@ variable "function_app_maps" {
 # --- end apim posture vars ---
 
 # ---------------------------------------------------------------------------
-# § app-gateway module variables (Plan 03-08)
+# § app-gateway module variables (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- app-gateway posture vars (Plan 03-08) ---
-# (Module plan 03-08 adds Application Gateway SKU/WAF/capacity variables here)
+# --- app-gateway posture vars (Plan 03-07) ---
+# D-307: NO `default` on any posture / divergence variable here.
+# T-03-23: appgw_sku_name + appgw_sku_tier are the WAF posture-preservation anchors.
+#   M1 = Standard_v2 (no WAF, posture preserved); M3 flips to WAF_v2 via tfvars diff.
+# Evidence: terraform/LD-Prod-EastUS-V2/main.tf:559-968; data/appgw.json.
+
+variable "agw_name" {
+  description = <<-EOT
+    Name of the Application Gateway resource.
+    prod:    "agw-prod-eastus"               (evidence: prod main.tf:562)
+    nonprod: "agw-common-nonproduction-eastus" (evidence: nonprod main.tf:536)
+    NO DEFAULT (D-307) — gateway name is connectivity-critical.
+  EOT
+  type        = string
+}
+
+variable "agw_identity_name" {
+  description = <<-EOT
+    Name of the user-assigned managed identity for AGW Key Vault cert access (T-03-25 / Shared 3).
+    prod:    "id-agw-prod-eastus"    (v3 naming convention)
+    nonprod: "id-agw-nonprod-eastus"
+    NO DEFAULT (D-307).
+  EOT
+  type        = string
+}
+
+variable "appgw_sku_name" {
+  description = <<-EOT
+    SKU name for the Application Gateway.
+    M1 value (both scopes): "Standard_v2".
+    M3 (prod): "WAF_v2" — tfvars flip, no code change.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:965-968; data/appgw.json.
+    NO DEFAULT (D-307 / T-03-23) — posture-preservation boundary.
+  EOT
+  type        = string
+
+  validation {
+    condition     = contains(["Standard_v2", "WAF_v2"], var.appgw_sku_name)
+    error_message = "appgw_sku_name must be 'Standard_v2' or 'WAF_v2'."
+  }
+}
+
+variable "appgw_sku_tier" {
+  description = <<-EOT
+    SKU tier for the Application Gateway (THE posture variable — D-307 / T-03-23).
+    M1 value (both scopes): "Standard_v2" (NO WAF — preserved A-/F-finding).
+    M3 (prod): "WAF_v2" — flipped via tfvars diff, no code change needed.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:966-967 (sku.tier="Standard_v2").
+              FINDINGS-DATA.md §Networking (no WAF on prod App Gateway — HIGH finding).
+    NO DEFAULT (D-307 / T-03-23) — unset = plan failure (fail fast, never silent).
+  EOT
+  type        = string
+
+  validation {
+    condition     = contains(["Standard_v2", "WAF_v2"], var.appgw_sku_tier)
+    error_message = "appgw_sku_tier must be 'Standard_v2' or 'WAF_v2'. M1=Standard_v2 (no WAF)."
+  }
+}
+
+variable "agw_min_capacity" {
+  description = <<-EOT
+    Autoscale minimum instance capacity for the Application Gateway.
+    Evidence: data/appgw.json autoscaleConfiguration.minCapacity=1 (both gateways).
+    NO DEFAULT (D-307).
+  EOT
+  type        = number
+}
+
+variable "agw_max_capacity" {
+  description = <<-EOT
+    Autoscale maximum instance capacity for the Application Gateway.
+    Evidence: data/appgw.json autoscaleConfiguration.maxCapacity=2 (both gateways).
+    NO DEFAULT (D-307).
+  EOT
+  type        = number
+}
+
+variable "agw_public_ip_key" {
+  description = <<-EOT
+    Key into var.networking.public_ips that identifies the Application Gateway's public IP.
+    Root looks up module.networking.public_ip_ids[var.agw_public_ip_key] to get the PIP resource ID.
+    prod:    "agw_prod"   → pip-prod-eastus    (evidence: public_ips.json / prod main.tf:671-674)
+    nonprod: "agw_common" → pip-common-nonproduction-eastus (evidence: public_ips.json / nonprod main.tf)
+    NO DEFAULT (D-307) — PIP selection is connectivity-critical.
+  EOT
+  type        = string
+}
+
+variable "agw_backend_address_pools" {
+  description = <<-EOT
+    Map of backend address pool definitions for the Application Gateway.
+    Key = logical pool key; value = { name, fqdns, ip_addresses }.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:568-599 (8 pools: APIM + web-frontend, prod+staging).
+    D-305: map-driven, not N hand-written blocks.
+    NO DEFAULT (D-307) — pool targets differ between scopes.
+  EOT
+  type = map(object({
+    name         = string
+    fqdns        = list(string)
+    ip_addresses = list(string)
+  }))
+}
+
+variable "agw_backend_http_settings" {
+  description = <<-EOT
+    Map of backend HTTP settings for the Application Gateway.
+    Key = logical settings key; value = per-settings config.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:600-670 (8 settings entries).
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name                  = string
+    cookie_based_affinity = string
+    affinity_cookie_name  = string
+    port                  = number
+    protocol              = string
+    request_timeout       = number
+    probe_name            = string
+    host_name             = string
+  }))
+}
+
+variable "agw_http_listeners" {
+  description = <<-EOT
+    Map of HTTP listener definitions for the Application Gateway.
+    Key = logical listener key; value = { name, ssl_certificate_name, host_names, host_name }.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:683-754 (8 listeners, all HTTPS + SNI).
+    T-03-25: ssl_certificate_name references a cert entry by name — no literal key material.
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name                 = string
+    ssl_certificate_name = string
+    host_names           = list(string)
+    host_name            = string
+  }))
+}
+
+variable "agw_probes" {
+  description = <<-EOT
+    Map of health probe definitions for the Application Gateway.
+    Key = logical probe key; value = per-probe config.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:759-854 (8 probes).
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name                = string
+    host                = string
+    path                = string
+    interval            = number
+    timeout             = number
+    unhealthy_threshold = number
+  }))
+}
+
+variable "agw_request_routing_rules" {
+  description = <<-EOT
+    Map of request routing rule definitions for the Application Gateway.
+    Key = logical rule key; value = per-rule config.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:855-926 (8 rules, Basic type).
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name                       = string
+    http_listener_name         = string
+    backend_address_pool_name  = string
+    backend_http_settings_name = string
+    priority                   = number
+    rewrite_rule_set_name      = string
+  }))
+}
+
+variable "agw_rewrite_rule_sets" {
+  description = <<-EOT
+    Map of rewrite rule sets for the Application Gateway.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:927-963
+      "front-end-app-rewrite": security response headers (X-Frame-Options, HSTS, etc.)
+      "Cros-Origin-Response": CORS Access-Control-Allow-Origin: *
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name = string
+    rewrite_rules = list(object({
+      name          = string
+      rule_sequence = number
+      response_headers = list(object({
+        header_name  = string
+        header_value = string
+      }))
+    }))
+  }))
+}
+
+variable "agw_ssl_certificates" {
+  description = <<-EOT
+    Map of SSL certificate entries for the Application Gateway.
+    Key = logical cert key; value = { name, key_vault_secret_id }.
+    T-03-25: Only KV-referenced active certs authored here. Historic date-tagged certs
+    (uploaded via Portal, no key_vault_secret_id) are NOT managed by Terraform — they
+    cause state drift without the certificate data. Set key_vault_secret_id = "" to omit it.
+    Active KV-referenced prod certs (evidence: prod main.tf:969-1150):
+      api-ssl-prod-cert, api-ssl-staging-cert, apimgmt-ssl-prod-cert, apimgmt-ssl-staging-cert,
+      apiportal-ssl-prod-cert, apiportal-ssl-staging-cert, app-ssl-prod-cert, lifedatacorp-amalesh (app-ssl-staging-cert).
+    Active KV-referenced nonprod certs (evidence: nonprod main.tf:1004-1035):
+      ssl-kv-apim-api-06-05-2026, ssl-kv-apim-api-qa-06-05-2026, ssl-kv-apim-mgmt-dev-06-05-2026,
+      ssl-kv-apim-mgmt-qa-06-05-2026, ssl-kv-apim-portal-dev, ssl-kv-apim-portal-qa-06-05-2026,
+      ssl-kv-app-dev-06-05-2026, ssl-kv-app-qa-06-05-2026.
+    NO DEFAULT (D-307). NO LITERAL CERT DATA (T-03-25 / HIPAA).
+  EOT
+  type = map(object({
+    name                = string
+    key_vault_secret_id = string
+  }))
+}
+
 # --- end app-gateway posture vars ---
 
 # ---------------------------------------------------------------------------
-# § observability module variables (Plan 03-09)
+# § observability module variables (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- observability posture vars (Plan 03-09) ---
-# (Module plan 03-09 adds Log Analytics/App Insights/alert variables here)
+# --- observability posture vars (Plan 03-07) ---
+# D-307: NO `default` on any posture / divergence variable here.
+# D-305: alerts + action_groups are map variables — NOT N hand-written declarations.
+# T-03-24: alert_scope_ids carries new-estate resource IDs; old ARM paths explicitly excluded.
+# T-03-25: app_insights outputs connection_string only (no literal instrumentation key).
+# Evidence: terraform/LD-Prod-EastUS-V2/main.tf:7174-8228 (7 action groups + 54 alerts).
+#           terraform/LD-NonProd-EastUS-V2/main.tf:3594-3781 (1 action group + 9 alerts).
+
+variable "log_analytics_workspace_name" {
+  description = <<-EOT
+    Name of the Log Analytics workspace to create.
+    prod scope:    "V2ProdLogAnalyticsWorkspace" (evidence: prod main.tf:1521).
+    nonprod scope: "" (no dedicated LA workspace; set to empty string to skip creation).
+    NO DEFAULT (D-307) — workspace presence differs between scopes.
+  EOT
+  type        = string
+}
+
+variable "saved_searches" {
+  description = <<-EOT
+    Map of custom saved KQL searches for the LA workspace (prod only).
+    Key = unique search GUID/name; value = { category, display_name, query }.
+    D-305: Only genuine business-value KQL queries retained — 672 built-in LA tables dropped.
+    Evidence: terraform/LD-Prod-EastUS-V2/main.tf:1536-1620 (res-2662 through custom KQL set).
+    Set to {} for nonprod scope. NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    category     = string
+    display_name = string
+    query        = string
+  }))
+}
+
+variable "app_insights_instances" {
+  description = <<-EOT
+    Map of Application Insights instances.
+    Key = logical instance key; value = { name, application_type, sampling_percentage }.
+    Evidence:
+      nonprod: appi-common-nonproduction-eastus (nonprod main.tf:3629), sampling_percentage=0.
+      prod:    appi-production-eastus (prod main.tf:7343); app-db-data-access-prod-eastus (prod main.tf:8324).
+    NO DEFAULT (D-307) — instances differ between scopes.
+  EOT
+  type = map(object({
+    name                = string
+    application_type    = string
+    sampling_percentage = number
+  }))
+}
+
+variable "action_groups" {
+  description = <<-EOT
+    Map of Monitor Action Groups.
+    Key = logical key referenced by alerts via action_group_key.
+    D-305: map-driven; all groups expressed here rather than as separate variable declarations.
+    Evidence:
+      prod (7 groups): "APIM Capacity" (APIMCapacity), "Action Group for Production Server Error" (AGProdSE),
+        "Dev-Email" (DevEmail), "DevAdmin" (Dev Admin), "Http Server Error" (Http Error),
+        "Overall Gateway Duration" (OvaGWDura), "Server Health" (ServerHealth).
+        Evidence: prod main.tf:7174-7342.
+      nonprod (1 group): "LifeData Azure Contributor" (LDAzCon).
+        Evidence: nonprod main.tf:3594-3628.
+    T-03-24: Action group IDs come from azurerm_monitor_action_group.this outputs — never old ARM paths.
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name       = string
+    short_name = string
+    arm_role_receivers = list(object({
+      name                    = string
+      role_id                 = string
+      use_common_alert_schema = bool
+    }))
+    email_receivers = list(object({
+      name                    = string
+      email_address           = string
+      use_common_alert_schema = bool
+    }))
+    azure_app_push_receivers = list(object({
+      name          = string
+      email_address = string
+    }))
+  }))
+}
+
+variable "alerts" {
+  description = <<-EOT
+    Map of metric alert definitions (D-305 for_each — NOT 63 hand-written blocks).
+    Key = unique alert key; value = per-alert config.
+    T-03-24: scope_key resolves to new-estate resource IDs via alert_scope_ids merge in main.tf.
+             action_group_key resolves to azurerm_monitor_action_group.this[key].id.
+    Evidence: prod main.tf:7350-8228 (54 alerts); nonprod main.tf:3636-3781 (9 alerts).
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name             = string
+    scope_key        = string
+    metric_name      = string
+    metric_namespace = string
+    aggregation      = string
+    operator         = string
+    threshold        = number
+    description      = string
+    enabled          = bool
+    severity         = number
+    frequency        = string
+    window_size      = string
+    action_group_key = string
+    dimension_name   = string
+    dimension_values = list(string)
+  }))
+}
+
+variable "smart_detector_rules" {
+  description = <<-EOT
+    Map of Azure Monitor Smart Detector Alert Rules.
+    Key = logical rule key; value = per-rule config.
+    Evidence: prod main.tf:8309-8323 (FailureAnomaliesDetector on app-db-data-access-prod-eastus appi).
+    app_insights_keys: list of keys into the module's azurerm_application_insights.this map.
+    action_group_key: key into azurerm_monitor_action_group.this.
+    Set to {} for nonprod scope (no smart detector rules in nonprod analog).
+    NO DEFAULT (D-307).
+  EOT
+  type = map(object({
+    name              = string
+    detector_type     = string
+    frequency         = string
+    severity          = string
+    description       = string
+    app_insights_keys = list(string)
+    action_group_key  = string
+  }))
+}
+
+variable "additional_alert_scope_ids" {
+  description = <<-EOT
+    Additional alert scope IDs not yet available from wired module outputs (e.g. APIM service IDs
+    before the APIM module is wired). Map of logical scope key → Azure resource ID string.
+    These are merged into the alert_scope_ids map passed to module.observability.
+    Set to {} when all scopes are covered by wired module outputs.
+    NO DEFAULT (D-307) — must be set explicitly in both tfvars.
+  EOT
+  type        = map(string)
+}
+
 # --- end observability posture vars ---

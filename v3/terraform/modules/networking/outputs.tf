@@ -134,3 +134,18 @@ output "subnet_ids" {
   description = "Map of all subnet IDs, keyed by the same keys as var.subnets."
   value       = { for k, v in azurerm_subnet.this : k => v.id }
 }
+
+# ---------------------------------------------------------------------------
+# § Public IP IDs (for app-gateway + APIM downstream wiring)
+# ---------------------------------------------------------------------------
+
+output "public_ip_ids" {
+  description = <<-EOT
+    Map of public IP resource IDs, keyed by the same keys as var.public_ips.
+    Downstream consumers:
+      app-gateway → public_ip_ids["agw_prod"] / public_ip_ids["agw_common"]
+      apim        → public_ip_ids["apim_dev"] / public_ip_ids["apim_staging_stv2"]
+    Evidence: public_ips.json per-scope PIP names; referenced by AGW frontend IP config.
+  EOT
+  value       = { for k, v in azurerm_public_ip.this : k => v.id }
+}

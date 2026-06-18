@@ -118,22 +118,96 @@ module "keyvault" {
 # }
 # --- end apim module call ---
 
-# --- app-gateway module call (Plan 03-08) ---
-# module "app_gateway" {
-#   source              = "./modules/app-gateway"
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # Application Gateway SKU/WAF variables wired by Plan 03-08
-# }
+# --- app-gateway module call (Plan 03-07) ---
+# Scope-shared: ONE gateway per scope, no for_each (D-302).
+# D-307 / T-03-23: appgw_sku_name + appgw_sku_tier are no-default posture variables.
+#   M1: Standard_v2 (no WAF — posture preserved per plan boundary).
+#   M3: WAF_v2 flip via tfvars diff — no code change needed.
+# T-03-25: SSL certs accessed via KV managed identity (Shared 3) — no literal cert data.
+module "app_gateway" {
+  source = "./modules/app-gateway"
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # Gateway identity (D-307 no-default)
+  agw_name          = var.agw_name
+  agw_identity_name = var.agw_identity_name
+
+  # SKU / posture (D-307 / T-03-23 — NO default; M1=Standard_v2 no WAF, M3→WAF_v2)
+  appgw_sku_name   = var.appgw_sku_name
+  appgw_sku_tier   = var.appgw_sku_tier
+  agw_min_capacity = var.agw_min_capacity
+  agw_max_capacity = var.agw_max_capacity
+
+  # Networking wiring — subnet + public IP from module.networking outputs
+  # agw_public_ip_key selects which PIP key in var.networking.public_ips maps to the AGW PIP.
+  # prod: "agw_prod" → pip-prod-eastus; nonprod: "agw_common" → pip-common-nonproduction-eastus.
+  agw_subnet_id    = module.networking.agw_subnet_id
+  agw_public_ip_id = module.networking.public_ip_ids[var.agw_public_ip_key]
+
+  # Key Vault wiring — for AGW identity role assignment (T-03-25)
+  key_vault_id = module.keyvault.key_vault_id
+
+  # Backend / routing configuration (map-driven D-305)
+  backend_address_pools = var.agw_backend_address_pools
+  backend_http_settings = var.agw_backend_http_settings
+  http_listeners        = var.agw_http_listeners
+  probes                = var.agw_probes
+  request_routing_rules = var.agw_request_routing_rules
+  rewrite_rule_sets     = var.agw_rewrite_rule_sets
+  ssl_certificates      = var.agw_ssl_certificates
+}
 # --- end app-gateway module call ---
 
-# --- observability module call (Plan 03-09) ---
-# module "observability" {
-#   source              = "./modules/observability"
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # Log Analytics/App Insights/alert variables wired by Plan 03-09
-# }
+# --- observability module call (Plan 03-07) ---
+# Scope-shared: ONE call per scope, no for_each (D-302).
+# D-305: LA tables noise dropped; alerts via for_each over map (not N blocks).
+# T-03-24: alert scopes reference NEW estate via alert_scope_ids map (never old LD-*-EastUS-V2 paths).
+# T-03-25: app_insights connection_string output only — no instrumentation key literals.
+module "observability" {
+  source = "./modules/observability"
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # LA workspace (prod only — "" to skip on nonprod)
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+  saved_searches               = var.saved_searches
+
+  # App Insights instances
+  app_insights_instances = var.app_insights_instances
+
+  # Action groups
+  action_groups = var.action_groups
+
+  # Alert scope IDs — new estate resource IDs (T-03-24)
+  # Wired from module outputs + app_gateway output.
+  # Per-env app service / SQL scope IDs assembled via merge of enabled_envs outputs.
+  alert_scope_ids = merge(
+    # App Gateway scope
+    { "app_gateway" = module.app_gateway.gateway_id },
+    # Per-env app service plan IDs (web + function) — one entry per enabled env
+    { for env, svc in module.app_service : "web_plan_${env}" => svc.web_plan_id },
+    { for env, svc in module.app_service : "function_plan_${env}" => svc.function_plan_id },
+    # Per-env web app IDs (flattened: "app_<app_name>" → id)
+    merge([for env, svc in module.app_service : { for name, id in svc.web_app_ids : "app_${name}" => id }]...),
+    # Per-env function app IDs
+    merge([for env, svc in module.app_service : { for name, id in svc.function_app_ids : "fapp_${name}" => id }]...),
+    # Per-env SQL server IDs
+    { for env, sql in module.sql : "sql_${env}" => sql.server_id },
+    # Additional explicit scope IDs from tfvars (APIM, etc., not yet wired via module)
+    var.additional_alert_scope_ids,
+  )
+
+  # Alert definitions
+  alerts = var.alerts
+
+  # Smart detector rules
+  smart_detector_rules = var.smart_detector_rules
+}
 # --- end observability module call ---
 
 # ---------------------------------------------------------------------------

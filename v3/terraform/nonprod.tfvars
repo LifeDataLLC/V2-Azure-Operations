@@ -696,17 +696,609 @@ function_app_maps = {
 # --- end apim values ---
 
 # ---------------------------------------------------------------------------
-# § app-gateway values (Plan 03-08)
+# § app-gateway values (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- app-gateway values (Plan 03-08) ---
-# (Plan 03-08 adds Application Gateway name/SKU/capacity values here)
+# --- app-gateway values (Plan 03-07) ---
+# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf:533-1040 (agw-common-nonproduction-eastus)
+#           data/appgw.json (autoscale min=1 max=2 confirmed on both gateways)
+# D-307: appgw_sku_name + appgw_sku_tier are no-default posture variables.
+#   M1: Standard_v2 (no WAF — preserved A-/F-finding). M3: WAF_v2 flip via tfvars diff.
+# T-03-23: WAF posture-preservation boundary — never silent default.
+# T-03-25: Only KV-referenced active certs authored. Historic date-tagged certs DROPPED.
+
+agw_name          = "agw-common-nonproduction-eastus" # evidence: nonprod main.tf:536
+agw_identity_name = "id-agw-nonprod-eastus"           # v3 naming convention
+
+# D-307 / T-03-23: WAF posture — M1=Standard_v2 (no WAF). M3 flips to WAF_v2.
+# Evidence: nonprod main.tf:904-907 sku.name="Standard_v2" sku.tier="Standard_v2".
+appgw_sku_name = "Standard_v2" # M1: no WAF (preserved nonprod posture; M3→WAF_v2)
+appgw_sku_tier = "Standard_v2" # M1: no WAF. Evidence: nonprod main.tf:905-906; data/appgw.json no WAF configured
+
+# Autoscale capacity. Evidence: data/appgw.json autoscaleConfiguration.minCapacity=1 maxCapacity=2
+agw_min_capacity = 1
+agw_max_capacity = 2
+
+# PIP key — selects pip-common-nonproduction-eastus from module.networking.public_ip_ids.
+# Evidence: public_ips.json "pip-common-nonproduction-eastus"; nonprod main.tf:652-655.
+agw_public_ip_key = "agw_common"
+
+# Backend address pools — 8 pools (dev + qa APIM API/MGMT/Portal + dev/qa web frontend).
+# Evidence: nonprod main.tf:542-573.
+agw_backend_address_pools = {
+  "bp-web-frontend-dev" = {
+    name         = "bp-web-frontend-dev"
+    fqdns        = ["web-frontend-dev-eastus.azurewebsites.net"]
+    ip_addresses = []
+  }
+  "bp-web-frontend-qa" = {
+    name         = "bp-web-frontend-qa"
+    fqdns        = ["web-frontend-qa-nonproduction-eastus.azurewebsites.net"]
+    ip_addresses = []
+  }
+  "bp-apim-api-dev" = {
+    name         = "bp-apim-api-dev"
+    fqdns        = []
+    ip_addresses = ["10.0.10.4"] # evidence: appgw.json backendAddressPools bp-apim-api-dev
+  }
+  "bp-apim-api-qa" = {
+    name         = "bp-apim-api-qa"
+    fqdns        = []
+    ip_addresses = ["10.0.10.7"] # evidence: appgw.json backendAddressPools bp-apim-api-qa
+  }
+  "bp-apim-mgmt-dev" = {
+    name         = "bp-apim-mgmt-dev"
+    fqdns        = []
+    ip_addresses = ["10.0.10.4"] # evidence: nonprod main.tf:558-561
+  }
+  "bp-apim-mgmt-qa" = {
+    name         = "bp-apim-mgmt-qa"
+    fqdns        = []
+    ip_addresses = ["10.0.10.7"] # evidence: nonprod main.tf:562-565
+  }
+  "bp-apim-portal-dev" = {
+    name         = "bp-apim-portal-dev"
+    fqdns        = []
+    ip_addresses = ["10.0.10.4"] # evidence: nonprod main.tf:566-569
+  }
+  "bp-apim-portal-qa" = {
+    name         = "bp-apim-portal-qa"
+    fqdns        = []
+    ip_addresses = ["10.0.10.7"] # evidence: nonprod main.tf:570-573
+  }
+}
+
+# Backend HTTP settings — 8 entries (dev + qa APIM API/MGMT/Portal + dev/qa web frontend).
+# Evidence: nonprod main.tf:574-651.
+agw_backend_http_settings = {
+  "bs-web-frontend-dev" = {
+    name                  = "bs-web-frontend-dev"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinityDev"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-web-frontend-dev"
+    host_name             = ""
+  }
+  "bs-web-frontend-qa" = {
+    name                  = "bs-web-frontend-qa"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinity"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-web-frontend-qa"
+    host_name             = ""
+  }
+  "bs-apim-api-dev" = {
+    name                  = "bs-apim-api-dev"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinityDev"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-api-dev"
+    host_name             = "api.dev.lifedatadev.com" # evidence: nonprod main.tf:625-626
+  }
+  "bs-apim-api-qa" = {
+    name                  = "bs-apim-api-qa"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinity"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-api-qa"
+    host_name             = "api.qa.lifedatadev.com" # evidence: nonprod main.tf:586-587
+  }
+  "bs-apim-mgmt-dev" = {
+    name                  = "bs-apim-mgmt-dev"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinityDev"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-apimgmt-dev"
+    host_name             = "apimgmt.dev.lifedatadev.com" # evidence: nonprod main.tf:635-636
+  }
+  "bs-apim-mgmt-qa" = {
+    name                  = "bs-apim-mgmt-qa"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinity"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-apimgmt-qa"
+    host_name             = "apimgmt.qa.lifedatadev.com" # evidence: nonprod main.tf:596-597
+  }
+  "bs-apim-portal-dev" = {
+    name                  = "bs-apim-portal-dev"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinityDev"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-apiportal-dev"
+    host_name             = "apiportal.dev.lifedatadev.com" # evidence: nonprod main.tf:645-646
+  }
+  "bs-apim-portal-qa" = {
+    name                  = "bs-apim-portal-qa"
+    cookie_based_affinity = "Enabled"
+    affinity_cookie_name  = "ApplicationGatewayAffinity"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 150
+    probe_name            = "hp-apiportal-qa"
+    host_name             = "apiportal.qa.lifedatadev.com" # evidence: nonprod main.tf:606-607
+  }
+}
+
+# HTTP listeners — 8 listeners, all HTTPS + SNI, KV-referenced certs.
+# Evidence: nonprod main.tf:668-739.
+agw_http_listeners = {
+  "listener-apim-api-dev" = {
+    name                 = "listener-apim-api-dev"
+    ssl_certificate_name = "ssl-kv-apim-api-06-05-2026" # KV cert evidence: nonprod main.tf:675
+    host_names           = []
+    host_name            = "api.dev.lifedatadev.com" # evidence: nonprod main.tf:671
+  }
+  "listener-apim-api-qa" = {
+    name                 = "listener-apim-api-qa"
+    ssl_certificate_name = "ssl-kv-apim-api-qa-06-05-2026" # KV cert evidence: nonprod main.tf:684
+    host_names           = []
+    host_name            = "api.qa.lifedatadev.com" # evidence: nonprod main.tf:680
+  }
+  "listener-apim-mgmt-dev" = {
+    name                 = "listener-apim-mgmt-dev"
+    ssl_certificate_name = "ssl-kv-apim-mgmt-dev-06-05-2026" # KV cert evidence: nonprod main.tf:693
+    host_names           = []
+    host_name            = "apimgmt.dev.lifedatadev.com" # evidence: nonprod main.tf:689
+  }
+  "listener-apim-mgmt-qa" = {
+    name                 = "listener-apim-mgmt-qa"
+    ssl_certificate_name = "ssl-kv-apim-mgmt-qa-06-05-2026" # KV cert evidence: nonprod main.tf:702
+    host_names           = []
+    host_name            = "apimgmt.qa.lifedatadev.com" # evidence: nonprod main.tf:698
+  }
+  "listener-apim-portal-dev" = {
+    name                 = "listener-apim-portal-dev"
+    ssl_certificate_name = "ssl-kv-apim-portal-dev" # KV cert evidence: nonprod main.tf:711
+    host_names           = []
+    host_name            = "apiportal.dev.lifedatadev.com" # evidence: nonprod main.tf:708
+  }
+  "listener-apim-portal-qa" = {
+    name                 = "listener-apim-portal-qa"
+    ssl_certificate_name = "ssl-kv-apim-portal-qa-06-05-2026" # KV cert evidence: nonprod main.tf:720
+    host_names           = []
+    host_name            = "apiportal.qa.lifedatadev.com" # evidence: nonprod main.tf:716
+  }
+  "listener-web-frontend-dev" = {
+    name                 = "listener-web-frontend-dev"
+    ssl_certificate_name = "ssl-kv-app-dev-06-05-2026" # KV cert evidence: nonprod main.tf:729
+    host_names           = []
+    host_name            = "app.dev.lifedatadev.com" # evidence: nonprod main.tf:725
+  }
+  "listener-web-frontend-qa" = {
+    name                 = "listener-web-frontend-qa"
+    ssl_certificate_name = "ssl-kv-app-qa-06-05-2026" # KV cert evidence: nonprod main.tf:738
+    host_names           = []
+    host_name            = "app.qa.lifedatadev.com" # evidence: nonprod main.tf:734
+  }
+}
+
+# Health probes — 8 probes. Evidence: nonprod main.tf:744-839.
+agw_probes = {
+  "hp-api-dev" = {
+    name                = "hp-api-dev"
+    host                = "api.dev.lifedatadev.com"
+    path                = "/status-0123456789abcdef"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-api-qa" = {
+    name                = "hp-api-qa"
+    host                = "api.qa.lifedatadev.com"
+    path                = "/status-0123456789abcdef"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-apimgmt-dev" = {
+    name                = "hp-apimgmt-dev"
+    host                = "apimgmt.dev.lifedatadev.com"
+    path                = "/ServiceStatus"
+    interval            = 30
+    timeout             = 60
+    unhealthy_threshold = 3
+  }
+  "hp-apimgmt-qa" = {
+    name                = "hp-apimgmt-qa"
+    host                = "apimgmt.qa.lifedatadev.com"
+    path                = "/ServiceStatus"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-apiportal-dev" = {
+    name                = "hp-apiportal-dev"
+    host                = "apiportal.dev.lifedatadev.com"
+    path                = "/signin"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-apiportal-qa" = {
+    name                = "hp-apiportal-qa"
+    host                = "apiportal.qa.lifedatadev.com"
+    path                = "/signin"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-web-frontend-dev" = {
+    name                = "hp-web-frontend-dev"
+    host                = "app.dev.lifedatadev.com"
+    path                = "/"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+  "hp-web-frontend-qa" = {
+    name                = "hp-web-frontend-qa"
+    host                = "app.qa.lifedatadev.com"
+    path                = "/"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+}
+
+# Request routing rules — 8 rules. Evidence: nonprod main.tf:840-903.
+agw_request_routing_rules = {
+  "rule-apim-api-dev" = {
+    name                       = "rule-apim-api-dev"
+    http_listener_name         = "listener-apim-api-dev"
+    backend_address_pool_name  = "bp-apim-api-dev"
+    backend_http_settings_name = "bs-apim-api-dev"
+    priority                   = 6
+    rewrite_rule_set_name      = "" # nonprod has no rewrite rule sets
+  }
+  "rule-apim-api-qa" = {
+    name                       = "rule-apim-api-qa"
+    http_listener_name         = "listener-apim-api-qa"
+    backend_address_pool_name  = "bp-apim-api-qa"
+    backend_http_settings_name = "bs-apim-api-qa"
+    priority                   = 2
+    rewrite_rule_set_name      = ""
+  }
+  "rule-apim-mgmt-dev" = {
+    name                       = "rule-apim-mgmt-dev"
+    http_listener_name         = "listener-apim-mgmt-dev"
+    backend_address_pool_name  = "bp-apim-mgmt-dev"
+    backend_http_settings_name = "bs-apim-mgmt-dev"
+    priority                   = 8
+    rewrite_rule_set_name      = ""
+  }
+  "rule-apim-mgmt-qa" = {
+    name                       = "rule-apim-mgmt-qa"
+    http_listener_name         = "listener-apim-mgmt-qa"
+    backend_address_pool_name  = "bp-apim-mgmt-qa"
+    backend_http_settings_name = "bs-apim-mgmt-qa"
+    priority                   = 4
+    rewrite_rule_set_name      = ""
+  }
+  "rule-apim-portal-dev" = {
+    name                       = "rule-apim-portal-dev"
+    http_listener_name         = "listener-apim-portal-dev"
+    backend_address_pool_name  = "bp-apim-portal-dev"
+    backend_http_settings_name = "bs-apim-portal-dev"
+    priority                   = 7
+    rewrite_rule_set_name      = ""
+  }
+  "rule-apim-portalqa" = {
+    name                       = "rule-apim-portalqa" # evidence: nonprod main.tf:884 (exact name used)
+    http_listener_name         = "listener-apim-portal-qa"
+    backend_address_pool_name  = "bp-apim-portal-qa"
+    backend_http_settings_name = "bs-apim-portal-qa"
+    priority                   = 3
+    rewrite_rule_set_name      = ""
+  }
+  "rule-web-frontend-dev" = {
+    name                       = "rule-web-frontend-dev"
+    http_listener_name         = "listener-web-frontend-dev"
+    backend_address_pool_name  = "bp-web-frontend-dev"
+    backend_http_settings_name = "bs-web-frontend-dev"
+    priority                   = 5
+    rewrite_rule_set_name      = ""
+  }
+  "rule-web-frontend-qa" = {
+    name                       = "rule-web-frontend-qa"
+    http_listener_name         = "listener-web-frontend-qa"
+    backend_address_pool_name  = "bp-web-frontend-qa"
+    backend_http_settings_name = "bs-web-frontend-qa"
+    priority                   = 1
+    rewrite_rule_set_name      = ""
+  }
+}
+
+# Rewrite rule sets — nonprod has no rewrite rule sets.
+# Evidence: nonprod main.tf (no rewrite_rule_set blocks in nonprod AGW resource).
+agw_rewrite_rule_sets = {}
+
+# SSL certificates — only the 8 KV-referenced active certs.
+# T-03-25: Historic date-tagged certs (no key_vault_secret_id) DROPPED — upload-once Portal certs.
+# Evidence: nonprod main.tf:1004-1035 (KV-referenced certs with kvnonproductioneastus vault).
+agw_ssl_certificates = {
+  "ssl-kv-apim-api-06-05-2026" = {
+    name                = "ssl-kv-apim-api-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/api-ssl-dev-cert"
+  }
+  "ssl-kv-apim-api-qa-06-05-2026" = {
+    name                = "ssl-kv-apim-api-qa-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/api-ssl-cert-qa"
+  }
+  "ssl-kv-apim-mgmt-dev-06-05-2026" = {
+    name                = "ssl-kv-apim-mgmt-dev-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/apimgmt-ssl-dev-cert"
+  }
+  "ssl-kv-apim-mgmt-qa-06-05-2026" = {
+    name                = "ssl-kv-apim-mgmt-qa-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/apimgmt-ssl-qa-cert"
+  }
+  "ssl-kv-apim-portal-dev" = {
+    name                = "ssl-kv-apim-portal-dev"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/apiportal-ssl-dev-cert"
+  }
+  "ssl-kv-apim-portal-qa-06-05-2026" = {
+    name                = "ssl-kv-apim-portal-qa-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/apiportal-ssl-qa-cert"
+  }
+  "ssl-kv-app-dev-06-05-2026" = {
+    name                = "ssl-kv-app-dev-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/app-ssl-dev-cert"
+  }
+  "ssl-kv-app-qa-06-05-2026" = {
+    name                = "ssl-kv-app-qa-06-05-2026"
+    key_vault_secret_id = "https://kvnonproductioneastus.vault.azure.net/secrets/app-ssl-qa-cert"
+  }
+}
+
 # --- end app-gateway values ---
 
 # ---------------------------------------------------------------------------
-# § observability values (Plan 03-09)
+# § observability values (Plan 03-07)
 # ---------------------------------------------------------------------------
 
-# --- observability values (Plan 03-09) ---
-# (Plan 03-09 adds Log Analytics/App Insights/alert map values here)
+# --- observability values (Plan 03-07) ---
+# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf:3594-3781
+#           (1 action group + 9 nonprod metric alerts + 1 app insights instance)
+# D-305: Alerts expressed via for_each map — NOT 9 hand-written blocks.
+# T-03-24: Action group IDs from new estate outputs — never old LD-*-EastUS-V2 ARM paths.
+# T-03-25: App Insights connection_string output only — no instrumentation key literal.
+
+# nonprod scope has no Log Analytics workspace.
+# Evidence: nonprod HCL has no azurerm_log_analytics_workspace resource.
+log_analytics_workspace_name = ""
+
+# No saved searches on nonprod (workspace absent).
+saved_searches = {}
+
+# 1 App Insights instance for nonprod.
+# Evidence: nonprod main.tf:3629-3635 (appi-common-nonproduction-eastus, sampling_percentage=0).
+app_insights_instances = {
+  "common" = {
+    name                = "appi-common-nonproduction-eastus"
+    application_type    = "web"
+    sampling_percentage = 0
+  }
+}
+
+# 1 action group for nonprod.
+# Evidence: nonprod main.tf:3594-3628 (res-2326 "LifeData Azure Contributor", short="LDAzCon").
+action_groups = {
+  "lifedata_contributor" = {
+    name       = "LifeData Azure Contributor"
+    short_name = "LDAzCon"
+    arm_role_receivers = [
+      {
+        name                    = "LifeData Azure Contributor"
+        role_id                 = "b24988ac-6180-42a0-ab88-20f7382dd24c" # Contributor role ID (builtin)
+        use_common_alert_schema = false
+      }
+    ]
+    email_receivers          = []
+    azure_app_push_receivers = []
+  }
+}
+
+# 9 nonprod metric alerts expressed via for_each map (D-305).
+# Evidence: nonprod main.tf:3636-3781 (res-2329 through res-2337).
+# Scopes use logical keys resolved to new-estate IDs via alert_scope_ids merge in main.tf.
+# T-03-24: scope_key resolves against new-estate module outputs — no old ARM paths.
+alerts = {
+  "nonprod-agw-5xx-backend" = {
+    name             = "V2 NonProd AGW 5XX Backend"
+    scope_key        = "app_gateway"
+    metric_name      = "BackendResponseStatus"
+    metric_namespace = "Microsoft.Network/applicationGateways"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = 10
+    description      = "NonProd Application Gateway backend 5XX response count exceeded threshold"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = "HttpStatusGroup"
+    dimension_values = ["5xx"]
+  }
+  "nonprod-agw-5xx-total" = {
+    name             = "V2 NonProd AGW 5XX Total"
+    scope_key        = "app_gateway"
+    metric_name      = "TotalRequests"
+    metric_namespace = "Microsoft.Network/applicationGateways"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = 10
+    description      = "NonProd Application Gateway total 5XX count exceeded threshold"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = "HttpStatusGroup"
+    dimension_values = ["5xx"]
+  }
+  "nonprod-agw-unhealthy-backend" = {
+    name             = "V2 NonProd AGW UnhealthyBackend"
+    scope_key        = "app_gateway"
+    metric_name      = "UnhealthyHostCount"
+    metric_namespace = "Microsoft.Network/applicationGateways"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 0
+    description      = "NonProd Application Gateway has unhealthy backend hosts"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-sql-dev-dtu" = {
+    name             = "V2 NonProd SQL Dev DTU"
+    scope_key        = "sql_dev"
+    metric_name      = "dtu_consumption_percent"
+    metric_namespace = "Microsoft.Sql/servers/databases"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 90
+    description      = "NonProd Dev SQL DTU consumption exceeded 90%"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-web-plan-dev-cpu" = {
+    name             = "V2 NonProd Web Plan Dev CPU"
+    scope_key        = "web_plan_dev"
+    metric_name      = "CpuPercentage"
+    metric_namespace = "Microsoft.Web/serverfarms"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 90
+    description      = "NonProd Dev App Service Plan CPU exceeded 90%"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-web-plan-dev-memory" = {
+    name             = "V2 NonProd Web Plan Dev Memory"
+    scope_key        = "web_plan_dev"
+    metric_name      = "MemoryPercentage"
+    metric_namespace = "Microsoft.Web/serverfarms"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 90
+    description      = "NonProd Dev App Service Plan memory exceeded 90%"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-app-db-dev-5xx" = {
+    name             = "V2 NonProd app-db-dev 5XX"
+    scope_key        = "app_app-db-dev-eastus"
+    metric_name      = "Http5xx"
+    metric_namespace = "Microsoft.Web/sites"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = 0
+    description      = "NonProd app-db-dev-eastus 5XX error count > 0"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-mobile-backend-dev-5xx" = {
+    name             = "V2 NonProd mobile-backend-dev 5XX"
+    scope_key        = "app_mobile-backend-dev-eastus"
+    metric_name      = "Http5xx"
+    metric_namespace = "Microsoft.Web/sites"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = 0
+    description      = "NonProd mobile-backend-dev-eastus 5XX error count > 0"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+  "nonprod-data-access-dev-5xx" = {
+    name             = "V2 NonProd data-access-dev 5XX"
+    scope_key        = "app_data-access-dev-eastus"
+    metric_name      = "Http5xx"
+    metric_namespace = "Microsoft.Web/sites"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = 0
+    description      = "NonProd data-access-dev-eastus 5XX error count > 0"
+    enabled          = true
+    severity         = 2
+    frequency        = "PT1M"
+    window_size      = "PT5M"
+    action_group_key = "lifedata_contributor"
+    dimension_name   = ""
+    dimension_values = []
+  }
+}
+
+# No smart detector rules on nonprod.
+# Evidence: nonprod HCL has no azurerm_monitor_smart_detector_alert_rule resource.
+smart_detector_rules = {}
+
+# Additional alert scope IDs not yet wired from module outputs.
+# APIM service IDs not yet available (APIM module not wired in 03-07).
+# Set to {} once all modules are wired and scope IDs are covered.
+additional_alert_scope_ids = {}
+
 # --- end observability values ---
