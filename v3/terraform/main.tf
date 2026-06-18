@@ -118,17 +118,34 @@ module "networking" {
 # § Per-env module calls (for_each over enabled_envs — D-301/303)
 # ---------------------------------------------------------------------------
 
-# --- sql module call (Plan 03-03) ---
-# module "sql" {
-#   source   = "./modules/sql"
-#   for_each = local.enabled_envs # one SQL stack per enabled env (D-301a: dev only in v1)
-#
-#   env                 = each.key
-#   config              = each.value
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # subnet_id and posture variables wired by Plan 03-03
-# }
+# --- sql module call (Plan 03-04) ---
+# Per-env: for_each over local.enabled_envs (D-301a: dev only in v1).
+# D-303: one SQL stack per enabled env — add/remove env = a tfvars edit.
+# D-315: sql_subnet_id fed from module.networking.sql_subnet_id (explicit VNet rule wiring).
+# D-307: all posture vars fed from root-level variables (set per tfvars, no defaults).
+module "sql" {
+  source   = "./modules/sql"
+  for_each = local.enabled_envs # one SQL stack per enabled env (D-301a: dev only in v1)
+
+  # Environment identity
+  env    = each.key
+  config = each.value
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # SQL subnet for VNet rule (D-315 / AUTH-03)
+  # module.networking.sql_subnet_id resolves to the scope-correct sql-*-eastus-subnet.
+  sql_subnet_id = module.networking.sql_subnet_id
+
+  # No-default posture variables (D-307) — set explicitly per scope in tfvars.
+  # M1 preserves current posture; M3 flips values via reviewed tfvars diff.
+  sql_public_network_access_enabled = var.sql_public_network_access_enabled
+  sql_allow_all_azure_ips           = var.sql_allow_all_azure_ips
+  sql_auditing_enabled              = var.sql_auditing_enabled
+  sql_azuread_only_auth             = var.sql_azuread_only_auth
+}
 # --- end sql module call ---
 
 # --- storage module call (Plan 03-04) ---

@@ -383,8 +383,16 @@ networking = {
 # § sql values (Plan 03-03)
 # ---------------------------------------------------------------------------
 
-# --- sql values (Plan 03-03) ---
-# (Plan 03-03 adds SQL posture + firewall + audit values here)
+# --- sql values (Plan 03-04) ---
+# D-307: Every posture value explicit + evidence-cited. M1 preserves current
+# (insecure) posture; M3 flips to secure values via reviewed tfvars diff.
+# D-312: Prod values authored now even though prod scope is idle in M1 (D-301a).
+
+sql_public_network_access_enabled = true  # M1: preserve. Evidence: sql_detail.json prod+staging servers publicNetworkAccess="Enabled"; FINDINGS-DATA.md §SQL F1
+sql_allow_all_azure_ips           = true  # M1: preserve. Evidence: sql_detail.json firewallRules[0].name="AllowAllWindowsAzureIps" (prod+staging); FINDINGS-DATA.md §SQL F2
+sql_auditing_enabled              = false # M1: preserve. Evidence: sql_detail.json auditPolicy.state="Disabled" (prod+staging servers); FINDINGS-DATA.md §SQL F3
+sql_azuread_only_auth             = false # M1: preserve. Evidence: sql_detail.json aadAdmins.azureAdOnlyAuthentication=false (prod+staging); FINDINGS-DATA.md §SQL F4
+
 # --- end sql values ---
 
 # ---------------------------------------------------------------------------

@@ -218,11 +218,20 @@ resource "azurerm_mssql_server_security_alert_policy" "this" {
 # ---------------------------------------------------------------------------
 # § Vulnerability Assessment
 # ---------------------------------------------------------------------------
+#
+# NOTE: The live estate aztfexport analog (main.tf:1569-1572, res-1922) has
+#   storage_container_path = ""  (Defender-managed, no custom SA).
+# However, azurerm provider v4.x validates that storage_container_path is non-empty
+# when storage_account_access_key is omitted, and rejects the empty-string form.
+# Since `express_vulnerability_assessment_enabled = true` on the server already
+# enables Express Vulnerability Assessment (the Defender-managed mode), the
+# explicit azurerm_mssql_server_vulnerability_assessment resource with empty path
+# is redundant and cannot be used without a real storage container.
+#
+# Auto-fix (Rule 1): omit azurerm_mssql_server_vulnerability_assessment from the
+# module. Express VA (express_vulnerability_assessment_enabled = true, line above)
+# is the provider-compliant equivalent. The security_alert_policy is kept — it is
+# a prerequisite for VA if a custom storage path is ever added in M3.
+#
+# Deviation tracked in 03-04-SUMMARY.md § Auto-fixed Issues.
 
-# Server-level vulnerability assessment (Defender for SQL VA).
-# storage_container_path = "" in the live estate (Defender-managed storage, not custom).
-# Evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1569-1572 (res-1922).
-resource "azurerm_mssql_server_vulnerability_assessment" "this" {
-  server_security_alert_policy_id = azurerm_mssql_server_security_alert_policy.this.id
-  storage_container_path          = "" # Defender-managed (evidence: analog main.tf:1572)
-}

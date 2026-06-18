@@ -173,8 +173,57 @@ variable "networking" {
 # § sql module variables (Plan 03-03)
 # ---------------------------------------------------------------------------
 
-# --- sql posture vars (Plan 03-03) ---
-# (Module plan 03-03 adds SQL posture/firewall/audit variables here)
+# --- sql posture vars (Plan 03-04) ---
+# D-307: NO `default` on any of these — each value set explicitly in both tfvars
+# with cited evidence from data/sql_detail.json and data/FINDINGS-DATA.md §SQL.
+# M1 preserves current (insecure) posture; M3 flips values via reviewed tfvars diff.
+
+variable "sql_public_network_access_enabled" {
+  description = <<-EOT
+    Controls public network access on all SQL servers in this scope.
+    M1 value: true (Enabled on all 4 servers). M3 flips to false.
+    Evidence: sql_detail.json publicNetworkAccess="Enabled" (all servers);
+              FINDINGS-DATA.md §SQL F1 (public data plane — CRITICAL finding).
+    NO DEFAULT (D-307) — public exposure is an explicit per-scope risk decision.
+  EOT
+  type        = bool
+}
+
+variable "sql_allow_all_azure_ips" {
+  description = <<-EOT
+    When true, the sql module authors the AllowAllWindowsAzureIps firewall rule
+    (start/end IP = 0.0.0.0) on every SQL server in this scope.
+    M1 value: true (rule present on all 4 servers). M3 removes it.
+    Evidence: sql_detail.json firewallRules[0].name="AllowAllWindowsAzureIps" (all servers);
+              FINDINGS-DATA.md §SQL F2 (open firewall — HIGH finding).
+    NO DEFAULT (D-307) — lateral-movement risk decision.
+  EOT
+  type        = bool
+}
+
+variable "sql_auditing_enabled" {
+  description = <<-EOT
+    Controls server-level and database-level extended auditing on all SQL servers.
+    M1 value: false (Disabled on all 4 servers). M3 flips to true (HIPAA ≥365 days).
+    Evidence: sql_detail.json auditPolicy.state="Disabled" (all 4 servers);
+              FINDINGS-DATA.md §SQL F3 (auditing disabled — HIGH/HIPAA finding).
+    NO DEFAULT (D-307) — HIPAA compliance decision; unset = plan failure.
+  EOT
+  type        = bool
+}
+
+variable "sql_azuread_only_auth" {
+  description = <<-EOT
+    Controls whether Azure AD-only authentication is enforced (disables SQL login auth).
+    M1 value: false (SQL login auth still enabled in parallel on all 4 servers).
+    M3 flips to true after confirming managed identity data-plane roles exist.
+    Evidence: sql_detail.json aadAdmins.azureAdOnlyAuthentication=false (all servers);
+              FINDINGS-DATA.md §SQL F4 (parallel secret auth paths — AUTH finding).
+    NO DEFAULT (D-307) — auth model is a deliberate security decision.
+  EOT
+  type        = bool
+}
+
 # --- end sql posture vars ---
 
 # ---------------------------------------------------------------------------

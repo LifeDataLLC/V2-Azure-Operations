@@ -76,8 +76,18 @@ output "apim_subnet_id" {
 # output "key_vault_uri"    { ... }
 # --- end keyvault outputs ---
 
-# --- sql outputs (Plan 03-03) ---
-# output "sql_server_ids"   { ... }   # map keyed by env name
+# --- sql outputs (Plan 03-04) ---
+
+output "sql_server_ids" {
+  description = "Map of SQL server resource IDs keyed by environment name (from module.sql)."
+  value       = { for env, mod in module.sql : env => mod.server_id }
+}
+
+output "sql_database_ids" {
+  description = "Map of SQL database resource IDs keyed by environment name (from module.sql)."
+  value       = { for env, mod in module.sql : env => mod.database_id }
+}
+
 # --- end sql outputs ---
 
 # --- storage outputs (Plan 03-04) ---
