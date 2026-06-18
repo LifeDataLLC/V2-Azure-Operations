@@ -230,8 +230,77 @@ variable "sql_azuread_only_auth" {
 # § storage module variables (Plan 03-04)
 # ---------------------------------------------------------------------------
 
-# --- storage posture vars (Plan 03-04) ---
-# (Module plan 03-04 adds storage account posture variables here)
+# --- storage posture vars (Plan 03-05) ---
+# D-307: NO `default` on any of these — each value set explicitly in both tfvars
+# with cited evidence from data/storage_accounts.json, data/prod_storage_accounts.json,
+# and data/FINDINGS-DATA.md §Storage.
+# M1 preserves current posture; M3 flips values via reviewed tfvars diff.
+# T-03-16: posture vars ensure no silent blob-public / shared-key / Allow-default.
+# T-03-18: min_tls_version is per-account (ldstqaeastus=TLS1_0 exception).
+
+variable "storage_shared_accounts" {
+  description = <<-EOT
+    Map of scope-shared storage accounts (D-302 — deploy once per scope, no for_each).
+    nonprod scope: ldfstnonproductioneastus (B2C/func scope-shared storage).
+    prod scope:    lifelatapublic (public CDN storage, scope-shared).
+    Key = logical account key; value = per-account config object.
+    See modules/storage/variables.tf for the full object schema.
+    NO DEFAULT (D-307) — posture settings are per-account evidence-backed decisions.
+  EOT
+  type = map(object({
+    name                            = string
+    location                        = string
+    account_replication_type        = string
+    allow_nested_items_to_be_public = bool
+    shared_access_key_enabled       = bool
+    min_tls_version                 = string
+    network_default_action          = string
+    large_file_shares_enabled       = bool
+    sas_expiry_period               = string
+    containers                      = list(string)
+    container_access_types          = map(string)
+    queues                          = list(string)
+    tables                          = list(string)
+    file_shares                     = map(number)
+    queue_logging_enabled           = bool
+  }))
+  # NO default — set per scope in nonprod.tfvars / prod.tfvars (D-307)
+}
+
+variable "storage_env_accounts" {
+  description = <<-EOT
+    Map of per-environment storage account maps (D-301/D-303 — one entry per env key).
+    Outer key = environment key (matching var.environments keys: "dev", "qa", "staging", "prod").
+    Inner map = accounts map for that environment (same schema as storage_shared_accounts).
+    Root calls module "storage_env" with for_each = local.enabled_envs, then passes
+    lookup(var.storage_env_accounts, each.key, {}) to the accounts input.
+    dev:     ldstdeveastus
+    qa:      ldstqaeastus + stqanonproductioneastus
+    staging: ststagingeastus
+    prod:    stldprodeastus + stldprodeastus2
+    Evidence: data/storage_accounts.json (nonprod), data/prod_storage_accounts.json (prod).
+    NO DEFAULT (D-307) — posture settings are per-account evidence-backed decisions.
+  EOT
+  type = map(map(object({
+    name                            = string
+    location                        = string
+    account_replication_type        = string
+    allow_nested_items_to_be_public = bool
+    shared_access_key_enabled       = bool
+    min_tls_version                 = string
+    network_default_action          = string
+    large_file_shares_enabled       = bool
+    sas_expiry_period               = string
+    containers                      = list(string)
+    container_access_types          = map(string)
+    queues                          = list(string)
+    tables                          = list(string)
+    file_shares                     = map(number)
+    queue_logging_enabled           = bool
+  })))
+  # NO default — set per scope in nonprod.tfvars / prod.tfvars (D-307)
+}
+
 # --- end storage posture vars ---
 
 # ---------------------------------------------------------------------------
@@ -239,7 +308,89 @@ variable "sql_azuread_only_auth" {
 # ---------------------------------------------------------------------------
 
 # --- keyvault posture vars (Plan 03-05) ---
-# (Module plan 03-05 adds KV auth-model and network posture variables here)
+# D-306: kv_enable_rbac_authorization is THE divergence anchor (no-default bool).
+# D-307: NO `default` on any of these — each value set explicitly in both tfvars
+# with cited evidence from data/keyvaults_detail.json and data/FINDINGS-DATA.md §Key Vaults.
+# T-03-17: kv_enable_rbac_authorization no-default; prod=false/nonprod=true explicit; M3 flips prod→true.
+
+variable "kv_name" {
+  description = <<-EOT
+    Name of the scope's Key Vault (D-302 — one vault per scope).
+    nonprod: "kvnonproductioneastus"  (evidence: keyvaults_detail.json)
+    prod:    "kvproductioneastus"     (evidence: keyvaults_detail.json)
+    NO DEFAULT (D-307) — vault name is connectivity-critical.
+  EOT
+  type        = string
+}
+
+variable "kv_sku_name" {
+  description = <<-EOT
+    SKU of the Key Vault. Both vaults use "standard".
+    Evidence: keyvaults_detail.json properties.sku.name="Standard" (both vaults).
+    NO DEFAULT (D-307) — explicit per tfvars even for uniform values.
+  EOT
+  type        = string
+
+  validation {
+    condition     = contains(["standard", "premium"], var.kv_sku_name)
+    error_message = "kv_sku_name must be 'standard' or 'premium'."
+  }
+}
+
+variable "kv_enable_rbac_authorization" {
+  description = <<-EOT
+    D-306 divergence anchor (T-03-17): KV authentication model.
+    nonprod.tfvars = true  — kvnonproductioneastus uses RBAC.
+                             Evidence: keyvaults_detail.json enableRbacAuthorization=true.
+    prod.tfvars    = false — kvproductioneastus uses legacy access policies (F-finding).
+                             Evidence: keyvaults_detail.json enableRbacAuthorization=false.
+    M3 flips prod→true after confirming role assignments exist.
+    NO DEFAULT (D-307) — auth model is a deliberate per-scope security decision.
+  EOT
+  type        = bool
+}
+
+variable "kv_network_default_action" {
+  description = <<-EOT
+    Network ACL default action for the Key Vault.
+    M1 value: "Allow" on both scopes.
+    Evidence: keyvaults_detail.json networkAcls.defaultAction="Allow" (both vaults).
+    M3 flips to "Deny". NO DEFAULT (D-307).
+  EOT
+  type        = string
+
+  validation {
+    condition     = contains(["Allow", "Deny"], var.kv_network_default_action)
+    error_message = "kv_network_default_action must be 'Allow' or 'Deny'."
+  }
+}
+
+variable "kv_public_network_access_enabled" {
+  description = <<-EOT
+    Whether public network access is enabled for the Key Vault.
+    M1 value: true on both scopes.
+    Evidence: keyvaults_detail.json publicNetworkAccess="Enabled" (both vaults).
+    M3 flips to false. NO DEFAULT (D-307).
+  EOT
+  type        = bool
+}
+
+variable "kv_access_policies" {
+  description = <<-EOT
+    Access policy objects for the Key Vault.
+    Used only when kv_enable_rbac_authorization=false (prod scope, M1).
+    Evidence: keyvaults_detail.json kvproductioneastus.properties.accessPolicies (8 entries).
+    In RBAC mode (nonprod), set to []. NO DEFAULT (D-307).
+  EOT
+  type = list(object({
+    object_id               = string
+    tenant_id               = string
+    secret_permissions      = list(string)
+    key_permissions         = list(string)
+    certificate_permissions = list(string)
+  }))
+}
+
 # --- end keyvault posture vars ---
 
 # ---------------------------------------------------------------------------

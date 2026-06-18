@@ -399,8 +399,99 @@ sql_azuread_only_auth             = false # M1: preserve. Evidence: sql_detail.j
 # § storage values (Plan 03-04)
 # ---------------------------------------------------------------------------
 
-# --- storage values (Plan 03-04) ---
-# (Plan 03-04 adds storage account map + posture values here)
+# --- storage values (Plan 03-05) ---
+# Evidence: data/prod_storage_accounts.json (prod accounts absent from aztfexport — live read Plan 03-02)
+#           data/storage_accounts.json (ststagingeastus in prod RG)
+# D-307: Every posture value explicit + evidence-cited. M1 preserves current posture.
+# D-312: Prod values authored now even though prod scope is idle in M1 (D-301a).
+# T-03-18: All prod accounts use TLS1_2 (no TLS1_0 exception in prod).
+
+# Scope-shared accounts (deploy once regardless of enabled envs — D-302)
+# prod scope: lifelatapublic (public CDN storage, westus, scope-shared, in prod RG)
+# Evidence: data/storage_accounts.json lifelatapublic location="westus" (in LD-Prod-EastUS-V2 RG)
+storage_shared_accounts = {
+  "lifelatapublic" = {
+    name                            = "lifelatapublic"
+    location                        = "westus"        # evidence: storage_accounts.json location="westus" (V1 legacy; in prod RG)
+    account_replication_type        = "LRS"           # evidence: storage_accounts.json sku.name="Standard_LRS"
+    allow_nested_items_to_be_public = true            # evidence: storage_accounts.json allowBlobPublicAccess=true
+    shared_access_key_enabled       = true            # evidence: storage_accounts.json allowSharedKeyAccess=true
+    min_tls_version                 = "TLS1_2"        # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
+    network_default_action          = "Allow"         # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+    large_file_shares_enabled       = false           # evidence: storage_accounts.json largeFileSharesState=null
+    sas_expiry_period               = "3650.00:00:00" # evidence: storage_accounts.json sasPolicy.sasExpirationPeriod="3650.00:00:00"
+    containers                      = []
+    container_access_types          = {}
+    queues                          = []
+    tables                          = []
+    file_shares                     = {}
+    queue_logging_enabled           = false
+  }
+}
+
+# Per-environment storage accounts (for_each over enabled_envs — D-301)
+# staging: ststagingeastus (LRS, in prod RG)
+# prod:    stldprodeastus (RA-GRS) + stldprodeastus2 (RA-GRS, eastus2)
+# Evidence: data/prod_storage_accounts.json, data/storage_accounts.json
+storage_env_accounts = {
+  staging = {
+    "ststaging" = {
+      name                            = "ststagingeastus"
+      location                        = "eastus"
+      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = true     # evidence: storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=true
+      min_tls_version                 = "TLS1_2" # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
+      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      containers                      = []
+      container_access_types          = {}
+      queues                          = []
+      tables                          = []
+      file_shares                     = {}
+      queue_logging_enabled           = false
+    }
+  }
+
+  prod = {
+    "stldprod" = {
+      name                            = "stldprodeastus"
+      location                        = "eastus"
+      account_replication_type        = "RAGRS"  # evidence: prod_storage_accounts.json sku="Standard_RAGRS" (RA-GRS)
+      allow_nested_items_to_be_public = true     # evidence: prod_storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true     # evidence: prod_storage_accounts.json allowSharedKeyAccess=true
+      min_tls_version                 = "TLS1_2" # evidence: prod_storage_accounts.json minimumTlsVersion="TLS1_2"
+      network_default_action          = "Allow"  # evidence: prod_storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false    # evidence: prod_storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""       # evidence: prod_storage_accounts.json sasPolicy=null
+      containers                      = []
+      container_access_types          = {}
+      queues                          = []
+      tables                          = []
+      file_shares                     = {}
+      queue_logging_enabled           = false
+    }
+    "stldprod2" = {
+      name                            = "stldprodeastus2"
+      location                        = "eastus2" # evidence: prod_storage_accounts.json location="eastus2"
+      account_replication_type        = "RAGRS"   # evidence: prod_storage_accounts.json sku="Standard_RAGRS"
+      allow_nested_items_to_be_public = true      # evidence: prod_storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true      # evidence: prod_storage_accounts.json allowSharedKeyAccess=true
+      min_tls_version                 = "TLS1_2"  # evidence: prod_storage_accounts.json minimumTlsVersion="TLS1_2"
+      network_default_action          = "Allow"   # evidence: prod_storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = true      # evidence: prod_storage_accounts.json largeFileSharesState="Enabled"
+      sas_expiry_period               = ""        # evidence: prod_storage_accounts.json sasPolicy=null
+      containers                      = []
+      container_access_types          = {}
+      queues                          = []
+      tables                          = []
+      file_shares                     = {}
+      queue_logging_enabled           = false
+    }
+  }
+}
+
 # --- end storage values ---
 
 # ---------------------------------------------------------------------------
@@ -408,8 +499,96 @@ sql_azuread_only_auth             = false # M1: preserve. Evidence: sql_detail.j
 # ---------------------------------------------------------------------------
 
 # --- keyvault values (Plan 03-05) ---
-# kv_enable_rbac_authorization = false  # prod uses legacy access policies (FINDINGS-DATA.md §Key Vaults; an F-finding; M3 flips to true)
-# (Plan 03-05 fills in this value and adds related KV posture values)
+# D-306: kv_enable_rbac_authorization=false for prod (legacy access-policy mode — an F-finding).
+# Evidence: keyvaults_detail.json kvproductioneastus.properties.enableRbacAuthorization=false
+# D-307: All posture values explicit + evidence-cited. M1 preserves current posture.
+# D-312: Prod values authored now (prod scope idle in M1 — applied in Phase 4).
+
+kv_name     = "kvproductioneastus" # evidence: keyvaults_detail.json name
+kv_sku_name = "standard"           # evidence: keyvaults_detail.json properties.sku.name="Standard"
+
+# D-306 DIVERGENCE ANCHOR: prod=false (legacy access-policy mode — F-finding). M3 flips to true.
+# Evidence: keyvaults_detail.json kvproductioneastus.properties.enableRbacAuthorization=false
+kv_enable_rbac_authorization = false
+
+# D-307 network posture — M1 preserves Allow (public). M3 flips to Deny.
+# Evidence: keyvaults_detail.json kvproductioneastus.properties.networkAcls.defaultAction="Allow"
+kv_network_default_action = "Allow"
+
+# M1: public network access enabled. M3 flips to false.
+# Evidence: keyvaults_detail.json kvproductioneastus.properties.publicNetworkAccess="Enabled"
+kv_public_network_access_enabled = true
+
+# Access policies for prod KV (kv_enable_rbac_authorization=false — access-policy mode).
+# Evidence: keyvaults_detail.json kvproductioneastus.properties.accessPolicies (8 entries)
+# Tenant ID: b504d3d4-ffb7-40f4-b25a-97ccb238fde3 (LifeData AAD tenant — all entries)
+kv_access_policies = [
+  # objectId e341e9ac: Get-only (certs + secrets). Evidence: accessPolicies[0]
+  {
+    object_id               = "e341e9ac-85c4-4ed8-9797-e883e9327c32"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["Get"]
+    key_permissions         = []
+    certificate_permissions = ["Get"]
+  },
+  # objectId 60915d49: Full admin (certs + keys + secrets). Evidence: accessPolicies[1]
+  {
+    object_id               = "60915d49-12fd-4828-8d80-81fdf7d1c101"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["Get", "List", "Set", "Delete", "Recover", "Backup", "Restore"]
+    key_permissions         = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "GetRotationPolicy", "SetRotationPolicy", "Rotate", "Encrypt", "Decrypt", "UnwrapKey", "WrapKey", "Verify", "Sign", "Purge", "Release"]
+    certificate_permissions = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers", "Purge"]
+  },
+  # objectId bffe5242: Full admin with Purge. Evidence: accessPolicies[2]
+  {
+    object_id               = "bffe5242-f120-4653-a130-7360856c5bb9"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["Get", "List", "Set", "Delete", "Recover", "Backup", "Restore", "Purge"]
+    key_permissions         = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "GetRotationPolicy", "SetRotationPolicy", "Rotate", "Encrypt", "Decrypt", "UnwrapKey", "WrapKey", "Verify", "Sign", "Purge", "Release"]
+    certificate_permissions = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers", "Purge"]
+  },
+  # objectId 842a0437: List+Get secrets only. Evidence: accessPolicies[3]
+  {
+    object_id               = "842a0437-1e8b-40f4-ace8-aad46290acdf"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["List", "Get"]
+    key_permissions         = []
+    certificate_permissions = []
+  },
+  # objectId 1298aea4: List+Get secrets only. Evidence: accessPolicies[4]
+  {
+    object_id               = "1298aea4-758a-4e81-841d-1be32a9f3672"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["List", "Get"]
+    key_permissions         = []
+    certificate_permissions = []
+  },
+  # objectId 53e7941b: List+Get secrets only. Evidence: accessPolicies[5]
+  {
+    object_id               = "53e7941b-ddc6-44e2-84ed-137016cae399"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["List", "Get"]
+    key_permissions         = []
+    certificate_permissions = []
+  },
+  # objectId c2f67616: Broad cert+key+secret (no Purge on keys). Evidence: accessPolicies[6]
+  {
+    object_id               = "c2f67616-8cb4-4d5c-aa93-0e06e89fa7b1"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["Get", "List", "Set", "Delete", "Recover", "Backup", "Restore"]
+    key_permissions         = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "GetRotationPolicy", "SetRotationPolicy", "Rotate"]
+    certificate_permissions = ["Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers"]
+  },
+  # objectId 386439af: List+Get secrets only (null certs/keys). Evidence: accessPolicies[7]
+  {
+    object_id               = "386439af-61c4-4497-8ede-071ea4dda04a"
+    tenant_id               = "b504d3d4-ffb7-40f4-b25a-97ccb238fde3"
+    secret_permissions      = ["List", "Get"]
+    key_permissions         = []
+    certificate_permissions = []
+  },
+]
+
 # --- end keyvault values ---
 
 # ---------------------------------------------------------------------------

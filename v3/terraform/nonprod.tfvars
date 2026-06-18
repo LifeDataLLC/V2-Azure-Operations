@@ -263,8 +263,226 @@ sql_azuread_only_auth             = false # M1: preserve. Evidence: sql_detail.j
 # § storage values (Plan 03-04)
 # ---------------------------------------------------------------------------
 
-# --- storage values (Plan 03-04) ---
-# (Plan 03-04 adds storage account map + posture values here)
+# --- storage values (Plan 03-05) ---
+# Evidence: data/storage_accounts.json (nonprod accounts — ldfstnonproductioneastus, ldstdeveastus, ldstqaeastus, stqanonproductioneastus)
+# D-307: Every posture value explicit + evidence-cited. M1 preserves current (insecure) posture.
+# M3 flips blob_public→false, shared_key→false, network_default→Deny.
+# T-03-18: ldstqaeastus has TLS1_0 exception (per storage_accounts.json minimumTlsVersion).
+
+# Scope-shared accounts (deploy once regardless of enabled envs — D-302)
+# nonprod scope: ldfstnonproductioneastus (B2C/func static assets, scope-shared)
+# Evidence: storage_accounts.json ldfstnonproductioneastus
+storage_shared_accounts = {
+  "ldfstnonproduction" = {
+    name                            = "ldfstnonproductioneastus"
+    location                        = "eastus" # evidence: storage_accounts.json location
+    account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
+    allow_nested_items_to_be_public = false    # evidence: storage_accounts.json allowBlobPublicAccess=false (only account with false in nonprod)
+    shared_access_key_enabled       = false    # evidence: storage_accounts.json allowSharedKeyAccess=false
+    min_tls_version                 = "TLS1_2" # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
+    network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+    large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
+    sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+    containers = [
+      "$web",           # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1685-1686
+      "b2c-signup-www", # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1689-1692
+    ]
+    container_access_types = {
+      "b2c-signup-www" = "container" # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1690 container_access_type="container"
+    }
+    queues                = []
+    tables                = []
+    file_shares           = {}
+    queue_logging_enabled = false
+  }
+}
+
+# Per-environment storage accounts (for_each over enabled_envs — D-301)
+# dev env:  ldstdeveastus (primary dev storage, per-env)
+# qa env:   ldstqaeastus + stqanonproductioneastus (qa-specific)
+# Evidence: storage_accounts.json per account
+storage_env_accounts = {
+  dev = {
+    "ldstdev" = {
+      name                            = "ldstdeveastus"
+      location                        = "eastus"     # evidence: storage_accounts.json location
+      account_replication_type        = "LRS"        # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = true         # evidence: storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true         # evidence: storage_accounts.json allowSharedKeyAccess=true
+      min_tls_version                 = "TLS1_2"     # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
+      network_default_action          = "Allow"      # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false        # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = "1.00:00:00" # evidence: storage_accounts.json sasPolicy.sasExpirationPeriod="1.00:00:00"
+      containers = [
+        "$web",
+        "azure-webjobs-hosts",
+        "azure-webjobs-secrets",
+        "data-files",
+        "db-backups",
+        "insights-logs-auditevent",
+        "insights-logs-connectedclientlist",
+        "organization-root",
+        "participant-info",
+        "participant-info-error",
+        "qr-code",
+        "sql-server-dev",
+        "study-content",
+        "study-dictionary-data",
+        "study-report",
+        "study-response",
+        "user-content",
+      ]
+      container_access_types = {
+        "study-content" = "blob" # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1792 container_access_type="blob"
+      }
+      queues = [
+        "block-response",
+        "block-response-error",
+        "file-upload-response",
+        "file-upload-response-error",
+        "media-response",
+        "media-response-error",
+        "participant-info",
+        "participant-info-error",
+        "participant-response",
+        "participant-response-error",
+        "push-response",
+        "push-response-error",
+        "question-response",
+        "question-response-error",
+        "question-response-multi-select",
+        "question-response-multi-select-error",
+        "score-response",
+        "score-response-error",
+        "session-instance-response",
+        "session-instance-response-error",
+        "session-reminder-response",
+        "session-reminder-response-error",
+        "session-response",
+        "session-response-error",
+        "trigger-response",
+        "trigger-response-error",
+      ]
+      # D-305: AzureFunctionsDiagnosticEvents tables are ephemeral/rotating (timestamp-suffixed).
+      # Author a representative set; the function runtime creates new ones automatically.
+      tables = [
+        "AzureFunctionsDiagnosticEvents202507",
+        "AzureFunctionsDiagnosticEvents202509",
+        "AzureFunctionsDiagnosticEvents202511",
+        "AzureFunctionsDiagnosticEvents202602",
+      ]
+      file_shares           = {}
+      queue_logging_enabled = true # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:1827-1843 queue_properties block present
+    }
+  }
+
+  qa = {
+    "ldstqa" = {
+      name                            = "ldstqaeastus"
+      location                        = "eastus"
+      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = false    # evidence: storage_accounts.json allowBlobPublicAccess=false
+      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=null (provider default=true)
+      min_tls_version                 = "TLS1_0" # T-03-18 EXCEPTION: evidence: storage_accounts.json minimumTlsVersion="TLS1_0"
+      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      containers = [
+        "azure-webjobs-hosts",
+        "azure-webjobs-secrets",
+      ]
+      container_access_types = {}
+      queues = [
+        "block-response",
+        "block-response-error",
+        "file-upload-response",
+        "file-upload-response-error",
+        "media-response",
+        "media-response-error",
+        "notif-response",
+        "notif-response-error",
+        "notif-trigger-response",
+        "notif-trigger-response-error",
+        "notification-master-response",
+        "notification-master-response-error",
+        "push-response",
+        "push-response-error",
+        "question-response",
+        "question-response-error",
+        "score-response",
+        "score-response-error",
+        "session-reminder-response",
+        "session-reminder-response-error",
+        "session-response",
+        "session-response-error",
+      ]
+      tables = [
+        "AzureFunctionsDiagnosticEvents202507",
+        "AzureFunctionsDiagnosticEvents202508",
+        "AzureFunctionsDiagnosticEvents202509",
+        "AzureFunctionsDiagnosticEvents202511",
+        "AzureFunctionsDiagnosticEvents202512",
+        "AzureFunctionsDiagnosticEvents202601",
+      ]
+      file_shares = {
+        "fapp-process-response" = 102400 # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:2065-2071 quota=102400
+      }
+      queue_logging_enabled = true # evidence: terraform/LD-NonProd-EastUS-V2/main.tf:2073-2089
+    }
+    "stqanonproduction" = {
+      name                            = "stqanonproductioneastus"
+      location                        = "eastus"
+      account_replication_type        = "LRS"    # evidence: storage_accounts.json sku.name="Standard_LRS"
+      allow_nested_items_to_be_public = true     # evidence: storage_accounts.json allowBlobPublicAccess=true
+      shared_access_key_enabled       = true     # evidence: storage_accounts.json allowSharedKeyAccess=true
+      min_tls_version                 = "TLS1_2" # evidence: storage_accounts.json minimumTlsVersion="TLS1_2"
+      network_default_action          = "Allow"  # evidence: storage_accounts.json networkRuleSet.defaultAction="Allow"
+      large_file_shares_enabled       = false    # evidence: storage_accounts.json largeFileSharesState=null
+      sas_expiry_period               = ""       # evidence: storage_accounts.json sasPolicy=null
+      containers = [
+        "$web",
+        "azure-webjobs-hosts",
+        "azure-webjobs-secrets",
+        "data-files",
+        "db-backups",
+        "organization-root",
+        "participant-info",
+        "participant-info-error",
+        "qr-code",
+        "study-content",
+        "study-dictionary-data",
+        "study-report",
+        "study-response",
+        "user-content",
+      ]
+      container_access_types = {}
+      queues = [
+        "block-response",
+        "block-response-error",
+        "file-upload-response",
+        "file-upload-response-error",
+        "media-response",
+        "media-response-error",
+        "participant-info",
+        "participant-info-error",
+        "push-response",
+        "push-response-error",
+        "question-response",
+        "question-response-error",
+        "score-response",
+        "score-response-error",
+        "session-reminder-response",
+        "session-reminder-response-error",
+        "session-response",
+        "session-response-error",
+      ]
+      tables                = []
+      file_shares           = {}
+      queue_logging_enabled = false
+    }
+  }
+}
+
 # --- end storage values ---
 
 # ---------------------------------------------------------------------------
@@ -272,8 +490,30 @@ sql_azuread_only_auth             = false # M1: preserve. Evidence: sql_detail.j
 # ---------------------------------------------------------------------------
 
 # --- keyvault values (Plan 03-05) ---
-# kv_enable_rbac_authorization = true  # nonprod uses RBAC (FINDINGS-DATA.md §Key Vaults; keyvaults_detail.json)
-# (Plan 03-05 fills in this value and adds related KV posture values)
+# D-306: kv_enable_rbac_authorization=true for nonprod (RBAC mode).
+# Evidence: keyvaults_detail.json kvnonproductioneastus.properties.enableRbacAuthorization=true
+# D-307: All posture values explicit + evidence-cited. M1 preserves current posture.
+
+kv_name     = "kvnonproductioneastus" # evidence: keyvaults_detail.json name
+kv_sku_name = "standard"              # evidence: keyvaults_detail.json properties.sku.name="Standard"
+
+# D-306 DIVERGENCE ANCHOR: nonprod=true (RBAC mode). M3 is a no-op here (already true).
+# Evidence: keyvaults_detail.json kvnonproductioneastus.properties.enableRbacAuthorization=true
+kv_enable_rbac_authorization = true
+
+# D-307 network posture — M1 preserves Allow (public). M3 flips to Deny.
+# Evidence: keyvaults_detail.json kvnonproductioneastus.properties.networkAcls.defaultAction="Allow"
+kv_network_default_action = "Allow"
+
+# M1: public network access enabled. M3 flips to false.
+# Evidence: keyvaults_detail.json kvnonproductioneastus.properties.publicNetworkAccess="Enabled"
+kv_public_network_access_enabled = true
+
+# RBAC mode (kv_enable_rbac_authorization=true): access_policy blocks are not authored.
+# The module's dynamic "access_policy" block produces zero blocks when RBAC=true.
+# Evidence: keyvaults_detail.json accessPolicies present but RBAC takes precedence.
+kv_access_policies = []
+
 # --- end keyvault values ---
 
 # ---------------------------------------------------------------------------

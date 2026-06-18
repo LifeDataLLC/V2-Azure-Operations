@@ -79,12 +79,34 @@ module "networking" {
 # --- end networking module call ---
 
 # --- keyvault module call (Plan 03-05) ---
-# module "keyvault" {
-#   source              = "./modules/keyvault"
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # keyvault posture variables wired by Plan 03-05
-# }
+# Scope-shared: ONE vault per scope, no for_each (D-302).
+# D-306: kv_enable_rbac_authorization is the divergence anchor (prod=false, nonprod=true).
+# D-307: all posture vars no-default, set explicitly in each tfvars.
+module "keyvault" {
+  source = "./modules/keyvault"
+
+  # Scope placement (D-311)
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+
+  # Vault identity (D-307 no-default — vault name is connectivity-critical)
+  kv_name     = var.kv_name
+  kv_sku_name = var.kv_sku_name
+
+  # D-306: The RBAC-vs-access-policy divergence anchor (T-03-17)
+  # prod.tfvars=false (legacy access-policy mode), nonprod.tfvars=true (RBAC mode)
+  kv_enable_rbac_authorization = var.kv_enable_rbac_authorization
+
+  # D-307 network posture (M1=Allow/Enabled; M3 flips to Deny/false)
+  kv_network_default_action        = var.kv_network_default_action
+  kv_public_network_access_enabled = var.kv_public_network_access_enabled
+
+  # Access policies (used only when kv_enable_rbac_authorization=false — prod scope in M1)
+  kv_access_policies = var.kv_access_policies
+
+  # Networking wiring — KV subnet from networking module (module.networking.keyvault_subnet_id)
+  keyvault_subnet_id = module.networking.keyvault_subnet_id
+}
 # --- end keyvault module call ---
 
 # --- apim module call (Plan 03-07) ---
@@ -148,17 +170,41 @@ module "sql" {
 }
 # --- end sql module call ---
 
-# --- storage module call (Plan 03-04) ---
-# module "storage" {
-#   source   = "./modules/storage"
-#   for_each = local.enabled_envs
-#
-#   env                 = each.key
-#   config              = each.value
-#   resource_group_name = data.azurerm_resource_group.this.name
-#   location            = data.azurerm_resource_group.this.location
-#   # storage posture variables wired by Plan 03-04
-# }
+# --- storage module call (Plan 03-05) ---
+# Hybrid model (D-302): scope-shared accounts called once; per-env accounts via for_each.
+# D-303: accounts map is the parameterization surface — add/remove an account = a tfvars edit.
+# D-307: all posture values are per-account no-default vars set in tfvars.
+
+# Scope-shared storage accounts (deploy once per scope regardless of enabled envs)
+# nonprod: ldfstnonproductioneastus (B2C/func storage, scope-shared)
+# prod:    lifelatapublic (public CDN storage, scope-shared)
+module "storage_shared" {
+  source = "./modules/storage"
+
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+  storage_subnet_id   = module.networking.storage_subnet_id
+
+  # Scope-shared accounts map (D-302) — set per scope in tfvars
+  accounts = var.storage_shared_accounts
+}
+
+# Per-environment storage accounts (one call per enabled env — D-301/D-303)
+# nonprod dev:     ldstdeveastus + stqanonproductioneastus (QA)
+# nonprod qa:      ldstqaeastus
+# prod staging:    ststagingeastus
+# prod prod:       stldprodeastus + stldprodeastus2
+module "storage_env" {
+  source   = "./modules/storage"
+  for_each = local.enabled_envs
+
+  resource_group_name = data.azurerm_resource_group.this.name
+  location            = data.azurerm_resource_group.this.location
+  storage_subnet_id   = module.networking.storage_subnet_id
+
+  # Per-env accounts map — each env key maps to its accounts in tfvars
+  accounts = lookup(var.storage_env_accounts, each.key, {})
+}
 # --- end storage module call ---
 
 # --- app-service module call (Plan 03-06) ---
