@@ -1,8 +1,8 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Phase 1 access verification — asserts all ACCESS-01/02/03 success criteria and the D-03
-    negative SPN invariant via deterministic Azure CLI checks.
+    Phase 1 + Phase 2 verification — asserts ACCESS-01/02/03, D-03 negative, SEC-GREP,
+    and STATE-01/02 success criteria via deterministic Azure CLI checks.
 
 .DESCRIPTION
     Run under the HUMAN identity (damir.contractor@lifedatacorp.com) — NOT the SPN.
@@ -28,6 +28,15 @@
                   (az webapp auth show + az webapp config show succeed)
       ACCESS-03b  Human reads both V2 RGs (az resource list returns >0 resources each)
       SEC-GREP    No ARM_CLIENT_SECRET or client_secret in v3/ tree
+      STATE-01a   stldtfstateeastus SA: minimumTlsVersion=TLS1_2, allowSharedKeyAccess=false,
+                  allowBlobPublicAccess=false, publicNetworkAccess=Enabled (D-208a M1 value)
+      STATE-01b   stldtfstateeastus blob data-protection: versioning ON, blob soft-delete 90d,
+                  container soft-delete 90d (D-208)
+      STATE-01c   CI SPN holds Storage Blob Data Contributor scoped to stldtfstateeastus (D-204);
+                  uses --all NOT --scope (Pitfall 2 MissingSubscription)
+      STATE-02    Both tfstate-nonprod and tfstate-prod containers exist; checked via AAD
+                  (--auth-mode login, shared-key disabled); a 403 immediately after first
+                  bootstrap may be RBAC propagation delay (Pitfall 4) — re-run after a few min
 
 .NOTES
     Pitfall 2: Use --all (NOT the --scope flag) when listing role assignments.
@@ -37,6 +46,8 @@
     Pitfall 4: Use verbatim mixed-case LD-NonProd-EastUS-V3 (ARM preserves casing).
     JMESPath:   Do NOT use | pipes in --query on Windows (az.cmd re-parses through cmd.exe).
                 Filter in PowerShell instead.
+    STATE-02:   A 403 on container-exists immediately after first bootstrap run may be RBAC
+                propagation delay (up to ~30 min). Re-run verify.ps1 after a few minutes.
 #>
 
 [CmdletBinding()]
@@ -66,6 +77,12 @@ $nonprodV2Rg       = 'LD-NonProd-EastUS-V2'
 $ficIssuer         = 'https://token.actions.githubusercontent.com'
 $ficSubject        = 'repo:LifeDataLLC/V2-Azure-Operations:ref:refs/heads/main'
 $ficAudience       = 'api://AzureADTokenExchange'
+
+# Phase 2: Remote State — configuration (D-202..D-208)
+$stateRg           = 'iac-shared'                               # D-202: already exists; lowercase (Pitfall 7)
+$saName            = 'stldtfstateeastus'                        # D-203
+$retentionDays     = 90                                         # D-208: blob + container soft-delete
+$stateContainers   = @('tfstate-nonprod', 'tfstate-prod')       # D-205/D-206
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 $passCount = 0
@@ -267,6 +284,122 @@ foreach ($rg in @($prodV2Rg, $nonprodV2Rg)) {
     }
 }
 
+# ── STATE-01/STATE-02 ────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "── STATE-01/02: Remote State Backend (Phase 2) ─────────────────────"
+Write-Host "   Runs under HUMAN identity (control-plane reads + data-plane container check)"
+
+# ─── STATE-01a: SA security settings ─────────────────────────────────────────
+Write-Host ""
+Write-Host "── STATE-01a: SA security settings (TLS, shared-key, blob-public, PNA) ─"
+# Use {field:path} projection — no | pipe in --query (Windows az.cmd Pitfall 5)
+$saSettingsJson = az storage account show -n $saName -g $stateRg `
+    --query "{tls:minimumTlsVersion, sharedKey:allowSharedKeyAccess, blobPublic:allowBlobPublicAccess, pna:publicNetworkAccess}" `
+    -o json 2>&1
+try {
+    $saSettings = $saSettingsJson | ConvertFrom-Json
+    if ($saSettings.tls -eq 'TLS1_2') {
+        Assert-Pass 'STATE-01a-tls' "minimumTlsVersion = TLS1_2"
+    } else {
+        Assert-Fail 'STATE-01a-tls' "minimumTlsVersion = $($saSettings.tls) (expected TLS1_2)"
+    }
+    if ($saSettings.sharedKey -eq $false) {
+        Assert-Pass 'STATE-01a-sharedKey' "allowSharedKeyAccess = false (AAD-only data plane)"
+    } else {
+        Assert-Fail 'STATE-01a-sharedKey' "allowSharedKeyAccess = $($saSettings.sharedKey) (expected false)"
+    }
+    if ($saSettings.blobPublic -eq $false) {
+        Assert-Pass 'STATE-01a-blobPublic' "allowBlobPublicAccess = false"
+    } else {
+        Assert-Fail 'STATE-01a-blobPublic' "allowBlobPublicAccess = $($saSettings.blobPublic) (expected false)"
+    }
+    # D-208a: publicNetworkAccess=Enabled is the expected M1 value — full network lockdown
+    # (private endpoint + IP rules + Disabled) is deferred to M3 security milestone.
+    if ($saSettings.pna -eq 'Enabled') {
+        Assert-Pass 'STATE-01a-pna' "publicNetworkAccess = Enabled (M1 accepted value per D-208a; full lockdown deferred to M3)"
+    } else {
+        Assert-Fail 'STATE-01a-pna' "publicNetworkAccess = $($saSettings.pna) (expected Enabled for M1 per D-208a)"
+    }
+} catch {
+    Assert-Fail 'STATE-01a' "Failed to parse SA settings output: $saSettingsJson"
+}
+
+# ─── STATE-01b: Blob data-protection settings ─────────────────────────────────
+Write-Host ""
+Write-Host "── STATE-01b: Blob data-protection (versioning + soft-delete 90d) ────"
+$blobPropsJson = az storage account blob-service-properties show `
+    -n $saName -g $stateRg `
+    --query "{ver:isVersioningEnabled, del:deleteRetentionPolicy, cdel:containerDeleteRetentionPolicy}" `
+    -o json 2>&1
+try {
+    $blobProps = $blobPropsJson | ConvertFrom-Json
+    if ($blobProps.ver -eq $true) {
+        Assert-Pass 'STATE-01b-versioning' "isVersioningEnabled = true"
+    } else {
+        Assert-Fail 'STATE-01b-versioning' "isVersioningEnabled = $($blobProps.ver) (expected true)"
+    }
+    if ($blobProps.del.enabled -eq $true -and $blobProps.del.days -eq $retentionDays) {
+        Assert-Pass 'STATE-01b-blobDel' "blob deleteRetentionPolicy: enabled=true, days=$retentionDays"
+    } else {
+        Assert-Fail 'STATE-01b-blobDel' "blob deleteRetentionPolicy: enabled=$($blobProps.del.enabled), days=$($blobProps.del.days) (expected enabled=true, days=$retentionDays)"
+    }
+    if ($blobProps.cdel.enabled -eq $true -and $blobProps.cdel.days -eq $retentionDays) {
+        Assert-Pass 'STATE-01b-containerDel' "container deleteRetentionPolicy: enabled=true, days=$retentionDays"
+    } else {
+        Assert-Fail 'STATE-01b-containerDel' "container deleteRetentionPolicy: enabled=$($blobProps.cdel.enabled), days=$($blobProps.cdel.days) (expected enabled=true, days=$retentionDays)"
+    }
+} catch {
+    Assert-Fail 'STATE-01b' "Failed to parse blob-service-properties output: $blobPropsJson"
+}
+
+# ─── STATE-01c: CI SPN data-plane role ───────────────────────────────────────
+Write-Host ""
+Write-Host "── STATE-01c: CI SPN Storage Blob Data Contributor on ${saName} ──────"
+# Use --all, NOT --scope (Pitfall 2 — throws MissingSubscription on this subscription).
+# Filter in PowerShell — no JMESPath | pipe (Windows az.cmd Pitfall 5).
+# Re-use $allRoles if already populated by ACCESS-02a; otherwise re-fetch.
+try {
+    if (-not $allRoles) {
+        $roleJson3 = az role assignment list --assignee $SpnAppId --all -o json 2>&1
+        $allRoles  = $roleJson3 | ConvertFrom-Json
+    }
+    # Wrap in @() before .Count — StrictMode-safe (empty result is $null without @())
+    $stateRoles = @($allRoles | Where-Object {
+        $_.roleDefinitionName -eq 'Storage Blob Data Contributor' -and
+        $_.scope -like "*$saName*"
+    })
+    if ($stateRoles.Count -eq 1) {
+        Assert-Pass 'STATE-01c' "SPN has Storage Blob Data Contributor scoped to ${saName}: $($stateRoles[0].scope)"
+    } elseif ($stateRoles.Count -gt 1) {
+        Assert-Pass 'STATE-01c' "SPN has $($stateRoles.Count) Storage Blob Data Contributor assignments scoped to ${saName} (at least 1 required)"
+    } else {
+        Assert-Fail 'STATE-01c' "No Storage Blob Data Contributor assignment scoped to '${saName}' found for SPN $SpnAppId"
+    }
+} catch {
+    Assert-Fail 'STATE-01c' "Failed to evaluate STATE-01c role check: $_"
+}
+
+# ─── STATE-02: Both containers exist (AAD data-plane) ────────────────────────
+Write-Host ""
+Write-Host "── STATE-02: State containers exist (--auth-mode login) ─────────────"
+# ALWAYS use --auth-mode login — shared-key access is disabled on the state SA.
+# NOTE: a 403 immediately after first bootstrap may be RBAC propagation delay (up to ~30 min,
+# RESEARCH Pitfall 4), not misconfiguration. Re-run verify.ps1 after a few minutes if this occurs.
+foreach ($c in $stateContainers) {
+    $existsRaw = az storage container exists `
+        --account-name $saName `
+        --name $c `
+        --auth-mode login `
+        --query exists -o tsv 2>&1
+    $exists = ($existsRaw | Out-String).Trim()
+    if ($exists -eq 'true') {
+        Assert-Pass "STATE-02-$c" "Container '${c}' exists in ${saName} (AAD auth)"
+    } else {
+        # May be propagation delay — note it in the FAIL message
+        Assert-Fail "STATE-02-$c" "Container '${c}' does not exist or returned error (raw: $existsRaw). If 403, wait ~30 min for RBAC propagation (Pitfall 4) and re-run."
+    }
+}
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
@@ -274,12 +407,16 @@ $total = $passCount + $failCount
 if ($failCount -eq 0) {
     Write-Host "  RESULT: ALL $passCount/$total CHECKS PASSED" -ForegroundColor Green
     Write-Host "  Phase 1 access gate: OPEN" -ForegroundColor Green
+    Write-Host "  Phase 2 state gate:  OPEN" -ForegroundColor Green
 } else {
     Write-Host "  RESULT: $failCount/$total CHECKS FAILED ($passCount passed)" -ForegroundColor Red
-    Write-Host "  Phase 1 access gate: BLOCKED — review FAIL lines above" -ForegroundColor Red
+    Write-Host "  Phase 1/2 gate: BLOCKED — review FAIL lines above" -ForegroundColor Red
     Write-Host ""
     Write-Host "  Pitfall 3 reminder: if ACCESS-03a/b failed with a real 403," -ForegroundColor Yellow
     Write-Host "  report it — do NOT pre-emptively grant Contributor-on-V2." -ForegroundColor Yellow
+    Write-Host "  STATE-02 reminder: a 403 on container-exists right after first" -ForegroundColor Yellow
+    Write-Host "  bootstrap run may be RBAC propagation delay (Pitfall 4)." -ForegroundColor Yellow
+    Write-Host "  Wait a few minutes and re-run verify.ps1 before treating as a failure." -ForegroundColor Yellow
 }
 Write-Host "═══════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
