@@ -15,6 +15,11 @@ override.tf.json
 # Crash log
 crash.log
 
-# Sensitive variable files
+# Sensitive variable files — secret-bearing tfvars are git-ignored by default.
+# nonprod.tfvars and prod.tfvars are EXPLICITLY un-ignored (D-312): they contain
+# no secrets/passwords/connection-strings by construction (PHI/HIPAA / T-03-02).
+# All sensitive values are KV-referenced via managed identity.
 *.tfvars
+!nonprod.tfvars
+!prod.tfvars
 !*.backend.hcl
