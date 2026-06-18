@@ -400,14 +400,92 @@ foreach ($c in $stateContainers) {
     }
 }
 
+# ─── STATE-03: No backend "local" {} anywhere under v3/ ──────────────────────
+Write-Host ""
+Write-Host "── STATE-03: No backend `"local`" in v3/ .tf files (static grep) ──────"
+# Mirror the SEC-GREP idiom above: real alternation -Pattern (NOT -SimpleMatch),
+# exclude this verify script itself (it names the guard pattern in comments —
+# a self-match would be a false positive), scan all *.tf under v3/.
+# STATE-03: The aztfexport artifacts under terraform/LD-*-EastUS-V2/terraform.tf
+# use `backend "local" {}` — those must NEVER be carried into v3/ (D-207, RESEARCH
+# Anti-Patterns). PASS = zero matches across all .tf files under v3/.
+$selfPath = $MyInvocation.MyCommand.Path
+$localBackendMatches = Get-ChildItem -Path $v3Dir -Recurse -File -Filter '*.tf' |
+    Where-Object { $_.FullName -ne $selfPath } |
+    Select-String -Pattern 'backend\s+"local"' -ErrorAction SilentlyContinue
+if (-not $localBackendMatches) {
+    Assert-Pass 'STATE-03' "No backend `"local`" found in any .tf file under $v3Dir — remote azurerm backend only (STATE-03)"
+} else {
+    $matchSummary = $localBackendMatches | ForEach-Object { "$($_.Filename):$($_.LineNumber)" }
+    Assert-Fail 'STATE-03' "backend `"local`" found in v3/ .tf file(s): $($matchSummary -join ', ') — must use backend `"azurerm`" only (STATE-03)"
+}
+
+# ─── STATE-01-init: terraform init smoke proof against live nonprod backend ───
+Write-Host ""
+Write-Host "── STATE-01-init: terraform init -backend-config=nonprod.backend.hcl ──"
+# Human use_cli path (az login first; use_oidc=true is harmless — only exercised
+# in CI when ARM_OIDC_REQUEST_* env vars are present, which they are not here).
+# NOTE: end-to-end OIDC login (CI path) is proven in Phase 5 — no SPN secret
+# is available by design, so we do NOT attempt SPN login here.
+# Pitfall 4: a transient 403 immediately after Plan 02-01 may be RBAC propagation
+# delay (up to ~30 min). If this assert fails with a 403, re-run after a few min.
+$tfDir = Join-Path $v3Dir 'terraform'
+Push-Location $tfDir
+try {
+    $initOutput = terraform init -backend-config=nonprod.backend.hcl -input=false 2>&1
+    $initExit   = $LASTEXITCODE
+    $initStr    = $initOutput | Out-String
+
+    if ($initExit -eq 0) {
+        # Guard: output must NOT contain an access-key prompt — that would mean
+        # the backend fell back to key auth (shared-key should be disabled).
+        if ($initStr -notmatch 'access_key' -and
+            $initStr -notmatch 'Enter a value' -and
+            $initStr -notmatch 'storage account access key') {
+            Assert-Pass 'STATE-01-init' "terraform init exited 0 with no access-key prompt (AAD/use_cli path)"
+        } else {
+            Assert-Fail 'STATE-01-init' "terraform init exited 0 but output contained an access-key prompt — shared-key may not be disabled. Output: $initStr"
+        }
+    } else {
+        Assert-Fail 'STATE-01-init' "terraform init exited $initExit. If 403: may be RBAC propagation (Pitfall 4) — re-run after a few min. Output: $initStr"
+    }
+} catch {
+    Assert-Fail 'STATE-01-init' "terraform init threw an exception: $_"
+} finally {
+    Pop-Location
+}
+
+# ─── STATE-01-stateList: terraform state list returns empty (no apply yet) ────
+Write-Host ""
+Write-Host "── STATE-01-stateList: terraform state list (expected empty) ───────────"
+Push-Location $tfDir
+try {
+    $stateListOutput = terraform state list 2>&1
+    $stateListExit   = $LASTEXITCODE
+    $stateListStr    = ($stateListOutput | Out-String).Trim()
+
+    if ($stateListExit -eq 0) {
+        # Empty state is correct — no terraform apply has run in this phase.
+        Assert-Pass 'STATE-01-stateList' "terraform state list exited 0 (empty: '$stateListStr') — remote backend reachable + readable; no apply run yet (correct for Phase 2)"
+    } else {
+        Assert-Fail 'STATE-01-stateList' "terraform state list exited $stateListExit. Output: $stateListStr"
+    }
+} catch {
+    Assert-Fail 'STATE-01-stateList' "terraform state list threw an exception: $_"
+} finally {
+    Pop-Location
+}
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 $total = $passCount + $failCount
 if ($failCount -eq 0) {
     Write-Host "  RESULT: ALL $passCount/$total CHECKS PASSED" -ForegroundColor Green
-    Write-Host "  Phase 1 access gate: OPEN" -ForegroundColor Green
-    Write-Host "  Phase 2 state gate:  OPEN" -ForegroundColor Green
+    Write-Host "  Phase 1 access gate:      OPEN" -ForegroundColor Green
+    Write-Host "  Phase 2 state gate:       OPEN" -ForegroundColor Green
+    Write-Host "  Phase 2 STATE-03 gate:    OPEN (no local backend in v3/)" -ForegroundColor Green
+    Write-Host "  Phase 2 init smoke gate:  OPEN (terraform init + state list clean)" -ForegroundColor Green
 } else {
     Write-Host "  RESULT: $failCount/$total CHECKS FAILED ($passCount passed)" -ForegroundColor Red
     Write-Host "  Phase 1/2 gate: BLOCKED — review FAIL lines above" -ForegroundColor Red
@@ -416,6 +494,8 @@ if ($failCount -eq 0) {
     Write-Host "  report it — do NOT pre-emptively grant Contributor-on-V2." -ForegroundColor Yellow
     Write-Host "  STATE-02 reminder: a 403 on container-exists right after first" -ForegroundColor Yellow
     Write-Host "  bootstrap run may be RBAC propagation delay (Pitfall 4)." -ForegroundColor Yellow
+    Write-Host "  STATE-01-init reminder: a 403 on terraform init right after Plan 02-01" -ForegroundColor Yellow
+    Write-Host "  may be RBAC propagation delay — re-run verify.ps1 after a few minutes." -ForegroundColor Yellow
     Write-Host "  Wait a few minutes and re-run verify.ps1 before treating as a failure." -ForegroundColor Yellow
 }
 Write-Host "═══════════════════════════════════════════════════════════════════" -ForegroundColor Cyan

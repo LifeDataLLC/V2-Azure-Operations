@@ -16,9 +16,9 @@
 #                 AAD access token. No ARM_CLIENT_SECRET, no access key.
 #
 # STATE-03 ANTI-PATTERN WARNING:
-#   The aztfexport artifacts under terraform/LD-*-EastUS-V2/terraform.tf use
-#   `backend "local" {}` and `use_oidc = false` — those are export-only defaults
-#   and MUST NEVER be carried into v3/. This file inverts both (D-207, STATE-03).
+#   The aztfexport artifacts under terraform/LD-*-EastUS-V2/terraform.tf use a
+#   LOCAL backend (not azurerm) and use_oidc = false — those are export-only
+#   defaults and MUST NEVER be carried into v3/. This file inverts both (D-207).
 #
 # SECURITY (T-02-07, T-02-08):
 #   No access_key, ARM_ACCESS_KEY, or any shared-key credential here or in the
@@ -40,6 +40,6 @@ terraform {
     # key             →  supplied via nonprod.backend.hcl / prod.backend.hcl
     #
     # DO NOT add access_key or ARM_ACCESS_KEY — the SA has shared-key disabled.
-    # DO NOT add backend "local" {} — violates STATE-03.
+    # DO NOT use a local backend here — this must remain azurerm (STATE-03).
   }
 }
